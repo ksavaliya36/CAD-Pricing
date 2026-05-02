@@ -44,6 +44,8 @@ const SUGGESTED_LIST = [
 ];
 const PREMIUM_PER_OZ = 150;
 const METAL_LOSS     = 0.05;
+const LABOR_GOLD     = 9;   // $/gram for Gold & Platinum
+const LABOR_SILVER   = 7;   // $/gram for Silver
 const TROY_OZ        = 31.1035;
 const ROUND_TYPES    = { "Moissanite": [10], "CVD Lab": [90], "Natural · Single Cut": [105,155], "Natural · Full Cut": [225,275,325,400] };
 const FANCY_TYPES    = { "Moissanite": [15], "CVD Lab": [140], "Natural (Modified Emerald)": [450] };
@@ -179,12 +181,14 @@ function App() {
 
   useEffect(() => { fetchSpotPrices(); }, []);
 
-  // Suggested customer price = (spot + $150) × 1.05 × purity ÷ troy oz
+  // Suggested customer price = (spot + $150) × 1.05 × purity ÷ troy oz + labor/gram
   function getSuggestedPerGram(item) {
     const spot = item.type === "silver" ? spotSilver : spotGold;
     if (!spot) return null;
     const adjusted = (spot + PREMIUM_PER_OZ) * (1 + METAL_LOSS);
-    return (adjusted / TROY_OZ) * item.purity;
+    const metalPerGram = (adjusted / TROY_OZ) * item.purity;
+    const labor = item.type === "silver" ? LABOR_SILVER : LABOR_GOLD;
+    return metalPerGram + labor;
   }
 
   // ── Handlers ──────────────────────────────────────────────────────────
@@ -378,7 +382,7 @@ Null if not found. Numbers only.` }
           {showSuggested && (
             <div className="fade-in" style={{ padding: "0 16px 14px" }}>
               <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 10px", lineHeight: 1.5 }}>
-                Spot + ${PREMIUM_PER_OZ}/oz premium + {(METAL_LOSS*100).toFixed(0)}% metal loss
+                Spot + ${PREMIUM_PER_OZ}/oz + {(METAL_LOSS*100).toFixed(0)}% metal loss + ${LABOR_GOLD}/g labor (${LABOR_SILVER}/g for silver)
               </p>
               {SUGGESTED_LIST.map(item => {
                 const p = getSuggestedPerGram(item);
