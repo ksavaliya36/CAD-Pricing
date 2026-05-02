@@ -12,11 +12,12 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin    { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; background: #0B0F14; min-height: 100vh; min-height: 100dvh; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; color: #fff; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; color: #fff;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
   input, button, select { font-family: inherit; }
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -35,20 +36,30 @@ const { useState, useRef, useEffect } = React;
 const METAL_FALLBACK = { "10K Gold": 83, "14K Gold": 110, "18K Gold": 140, "925 Silver": 10 };
 const KARAT_PURITY   = { "10K Gold": 10/24, "14K Gold": 14/24, "18K Gold": 18/24, "925 Silver": 0.925 };
 const SUGGESTED_LIST = [
-  { name: "10K Gold",   purity: 10/24,    type: "gold" },
-  { name: "14K Gold",   purity: 14/24,    type: "gold" },
-  { name: "18K Gold",   purity: 18/24,    type: "gold" },
-  { name: "22K Gold",   purity: 22/24,    type: "gold" },
-  { name: "24K Gold",   purity: 1.0,      type: "gold" },
-  { name: "925 Silver", purity: 0.925,    type: "silver" },
+  { name: "10K Gold",   purity: 10/24, type: "gold"   },
+  { name: "14K Gold",   purity: 14/24, type: "gold"   },
+  { name: "18K Gold",   purity: 18/24, type: "gold"   },
+  { name: "22K Gold",   purity: 22/24, type: "gold"   },
+  { name: "24K Gold",   purity: 1.0,   type: "gold"   },
+  { name: "925 Silver", purity: 0.925, type: "silver" },
 ];
 const PREMIUM_PER_OZ = 150;
 const METAL_LOSS     = 0.05;
-const LABOR_GOLD     = 9;   // $/gram for Gold & Platinum
-const LABOR_SILVER   = 7;   // $/gram for Silver
+const LABOR_GOLD     = 9;
+const LABOR_SILVER   = 7;
 const TROY_OZ        = 31.1035;
-const ROUND_TYPES    = { "Moissanite": [10], "CVD Lab": [90], "Natural · Single Cut": [105,155], "Natural · Full Cut": [225,275,325,400] };
-const FANCY_TYPES    = { "Moissanite": [15], "CVD Lab": [140], "Natural (Modified Emerald)": [450] };
+const MM_TO_IN       = 0.03937;
+const ROUND_TYPES    = {
+  "Moissanite":           [10],
+  "CVD Lab":              [90],
+  "Natural · Single Cut": [105, 155],
+  "Natural · Full Cut":   [225, 275, 325, 400],
+};
+const FANCY_TYPES = {
+  "Moissanite":                [15],
+  "CVD Lab":                   [140],
+  "Natural (Modified Emerald)":[450],
+};
 const MARKUP         = 0.18;
 const QUALITY_LABELS = ["Standard","Premium","Superior","Exceptional"];
 
@@ -104,20 +115,19 @@ function App() {
   const [spotSilver,   setSpotSilver]   = useState(null);
   const [priceStatus,  setPriceStatus]  = useState("loading");
   const [priceTime,    setPriceTime]    = useState(null);
+  const [showSuggested,setShowSuggested]= useState(false);
 
   // Image / extraction
-  const [image,       setImage]       = useState(null);
-  const [imageB64,    setImageB64]    = useState(null);
-  const [imageMime,   setImageMime]   = useState("image/jpeg");
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState("");
-  const [extracted,   setExtracted]   = useState(null);
-  const [editGrams,   setEditGrams]   = useState("");
-  const [editRound,   setEditRound]   = useState("");
-  const [editFancy,   setEditFancy]   = useState("");
-
-  // Selections
-  const [showSuggested, setShowSuggested] = useState(false);
+  const [image,      setImage]      = useState(null);
+  const [imageB64,   setImageB64]   = useState(null);
+  const [imageMime,  setImageMime]  = useState("image/jpeg");
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState("");
+  const [extracted,  setExtracted]  = useState(null);
+  const [editGrams,  setEditGrams]  = useState("");
+  const [editRound,  setEditRound]  = useState("");
+  const [editFancy,  setEditFancy]  = useState("");
+  const [editDims,   setEditDims]   = useState({ l: null, w: null, h: null });
 
   // Pricing selections
   const [metal,     setMetal]     = useState(null);
@@ -129,22 +139,23 @@ function App() {
   const fileRef = useRef();
 
   // Derived
-  const hasRound   = parseFloat(editRound) > 0;
-  const hasFancy   = parseFloat(editFancy) > 0;
-  const showConfig = extracted !== null;
-  const roundReady = !hasRound || (roundType && roundPPC);
-  const fancyReady = !hasFancy || (fancyType && fancyPPC);
+  const hasRound    = parseFloat(editRound) > 0;
+  const hasFancy    = parseFloat(editFancy) > 0;
+  const hasDims     = editDims.l || editDims.w || editDims.h;
+  const showConfig  = extracted !== null;
+  const roundReady  = !hasRound || (roundType && roundPPC);
+  const fancyReady  = !hasFancy || (fancyType && fancyPPC);
   const showSummary = showConfig && metal && roundReady && fancyReady;
 
-  const metalPPG  = metal ? metalPrices[metal] : 0;
-  const grams     = parseFloat(editGrams) || 0;
-  const roundCt   = parseFloat(editRound)  || 0;
-  const fancyCt   = parseFloat(editFancy)  || 0;
-  const subtotal  = grams * metalPPG + roundCt * (roundPPC||0) + fancyCt * (fancyPPC||0);
-  const rawFinal  = subtotal * (1 + MARKUP);
+  const metalPPG   = metal ? metalPrices[metal] : 0;
+  const grams      = parseFloat(editGrams) || 0;
+  const roundCt    = parseFloat(editRound)  || 0;
+  const fancyCt    = parseFloat(editFancy)  || 0;
+  const subtotal   = grams * metalPPG + roundCt * (roundPPC||0) + fancyCt * (fancyPPC||0);
+  const rawFinal   = subtotal * (1 + MARKUP);
   const finalPrice = rawFinal < 1500 ? Math.ceil(rawFinal/10)*10 : Math.ceil(rawFinal/50)*50;
 
-  // ── Fetch live spot prices (gold-api.com — free, CORS, no key) ─────────
+  // ── Fetch live spot prices ─────────────────────────────────────────────
   async function fetchSpotPrices() {
     setPriceStatus("loading");
     try {
@@ -156,7 +167,7 @@ function App() {
       const silverData = await silverRes.json();
       const gold   = goldData.price;
       const silver = silverData.price;
-      if (!gold) throw new Error("No gold price returned");
+      if (!gold) throw new Error("No gold price");
       const gPG = gold / TROY_OZ;
       const sPG = silver ? silver / TROY_OZ : METAL_FALLBACK["925 Silver"] / 0.925;
       setSpotGold(gold); setSpotSilver(silver || null);
@@ -171,7 +182,6 @@ function App() {
     } catch {
       setMetalPrices(METAL_FALLBACK);
       setPriceStatus("fallback");
-      // Approximate fallback spot prices so the suggested dropdown still works
       setSpotGold(4500);
       setSpotSilver(32);
     }
@@ -179,7 +189,7 @@ function App() {
 
   useEffect(() => { fetchSpotPrices(); }, []);
 
-  // Suggested customer price = (spot + $150) × 1.05 × purity ÷ troy oz + labor/gram
+  // Suggested price = (spot + $150) × 1.05 / troy oz × purity + labor/g
   function getSuggestedPerGram(item) {
     const spot = item.type === "silver" ? spotSilver : spotGold;
     if (!spot) return null;
@@ -196,6 +206,7 @@ function App() {
   function reset() {
     setExtracted(null); setError("");
     setEditGrams(""); setEditRound(""); setEditFancy("");
+    setEditDims({ l: null, w: null, h: null });
     setMetal(null); setFancyType(null); setFancyPPC(null);
   }
 
@@ -232,14 +243,15 @@ function App() {
           messages:[{ role:"user", content:[
             { type:"image", source:{ type:"base64", media_type:imageMime, data:imageB64 } },
             { type:"text", text:`Jewelry CAD spec sheet. Return ONLY valid JSON, no markdown:
-{"grams":<number|null>,"metal_type":"<10K Gold|14K Gold|18K Gold|925 Silver|null>","round_carats":<number|null>,"round_type":"<Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null>","fancy_carats":<number|null>,"fancy_type":"<Moissanite|CVD Lab|Natural (Modified Emerald)|null>","notes":"<brief summary>"}
+{"grams":<number|null>,"metal_type":"<10K Gold|14K Gold|18K Gold|925 Silver|null>","round_carats":<number|null>,"round_type":"<Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null>","fancy_carats":<number|null>,"fancy_type":"<Moissanite|CVD Lab|Natural (Modified Emerald)|null>","dimensions_mm":{"length":<number|null>,"width":<number|null>,"height":<number|null>},"notes":"<brief summary>"}
 - Gram weight: grams, wt, weight, gr, g
 - Metal type: 10K/14K/18K Gold or 925/Silver/Sterling
 - Round carats: RD, Round, DW, R
 - Round type: Moissanite(Moiss/MOI), CVD Lab(CVD/Lab/LG), Natural · Single Cut(SC), Natural · Full Cut(FC/Brilliant/Natural)
 - Fancy carats: Fancy, FD, Pear, Marquise, Princess, Oval, Cushion, Emerald
 - Fancy type: Moissanite, CVD Lab, Natural (Modified Emerald)
-Null if not found. Numbers only.` }
+- Dimensions: look for L/W/H, length/width/height/depth values in mm
+Null if not found. Numbers only for numeric fields.` }
           ]}]
         })
       });
@@ -248,17 +260,24 @@ Null if not found. Numbers only.` }
       const raw    = data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
       const parsed = JSON.parse(raw.replace(/```json|```/g,"").trim());
       setExtracted(parsed);
-      setEditGrams(parsed.grams       != null ? String(parsed.grams)         : "");
-      setEditRound(parsed.round_carats != null ? String(parsed.round_carats) : "");
-      setEditFancy(parsed.fancy_carats != null ? String(parsed.fancy_carats) : "");
+      setEditGrams(parsed.grams        != null ? String(parsed.grams)         : "");
+      setEditRound(parsed.round_carats != null ? String(parsed.round_carats)  : "");
+      setEditFancy(parsed.fancy_carats != null ? String(parsed.fancy_carats)  : "");
       if (parsed.metal_type && METAL_FALLBACK[parsed.metal_type]) setMetal(parsed.metal_type);
       if (parsed.round_type && ROUND_TYPES[parsed.round_type]) { setRoundType(parsed.round_type); setRoundPPC(ROUND_TYPES[parsed.round_type][0]); }
       if (parsed.fancy_type && FANCY_TYPES[parsed.fancy_type]) { setFancyType(parsed.fancy_type); setFancyPPC(FANCY_TYPES[parsed.fancy_type][0]); }
+      // Convert dimensions from mm to inches
+      const dims = parsed.dimensions_mm || {};
+      const toIn = v => v != null ? (v * MM_TO_IN).toFixed(3) : null;
+      setEditDims({ l: toIn(dims.length), w: toIn(dims.width), h: toIn(dims.height) });
     } catch(e) { setError(e.message || "Could not read image. Please try again."); }
     setLoading(false);
   }
 
   function doExport() {
+    const dimStr = hasDims
+      ? `\nDimensions: ${[editDims.l && `L ${editDims.l}"`, editDims.w && `W ${editDims.w}"`, editDims.h && `H ${editDims.h}"`].filter(Boolean).join(" × ")}`
+      : "";
     const lines = [
       "PRIME WHOLESALE — CAD QUOTE",
       "─────────────────────────────",
@@ -266,6 +285,7 @@ Null if not found. Numbers only.` }
       `Metal:  ${metal} · ${fmtD(grams)}g`,
       hasRound && `Round:  ${roundType} · ${fmtD(roundCt)}ct`,
       hasFancy && `Fancy:  ${fancyType} · ${fmtD(fancyCt)}ct`,
+      hasDims  && `Dimensions: ${[editDims.l && `L ${editDims.l}"`, editDims.w && `W ${editDims.w}"`, editDims.h && `H ${editDims.h}"`].filter(Boolean).join(" × ")}`,
       "",
       `TOTAL:  ${fmt(finalPrice)}`,
       "",
@@ -275,7 +295,7 @@ Null if not found. Numbers only.` }
     else { navigator.clipboard.writeText(lines).then(()=>alert("Copied to clipboard!")); }
   }
 
-  // ── Shared styles ──────────────────────────────────────────────────────
+  // ── Input style ────────────────────────────────────────────────────────
   const inp = {
     width:"100%", padding:"13px 14px", fontSize:15,
     color:C.text, background:C.surface, border:"none", borderRadius:12,
@@ -325,15 +345,15 @@ Null if not found. Numbers only.` }
 
       {/* Live spot price banner */}
       <div style={{
-        background: priceStatus==="live" ? "rgba(76,175,130,0.08)" : priceStatus==="fallback" ? "rgba(212,165,116,0.08)" : C.surface,
-        border:`1px solid ${priceStatus==="live" ? "rgba(76,175,130,0.25)" : priceStatus==="fallback" ? C.goldBorder : C.cardBorder}`,
+        background: priceStatus==="live" ? "rgba(76,175,130,0.08)" : "rgba(212,165,116,0.08)",
+        border:`1px solid ${priceStatus==="live" ? "rgba(76,175,130,0.25)" : C.goldBorder}`,
         borderRadius:14, padding:"12px 16px", marginBottom:14,
         display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
       }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{
             width:8, height:8, borderRadius:"50%", flexShrink:0,
-            background: priceStatus==="live" ? C.green : priceStatus==="fallback" ? C.gold : C.textMute,
+            background: priceStatus==="live" ? C.green : C.gold,
             boxShadow: priceStatus==="live" ? `0 0 7px ${C.green}` : "none",
           }}/>
           <div>
@@ -358,26 +378,27 @@ Null if not found. Numbers only.` }
         }}>↻</button>
       </div>
 
-      {/* Suggested prices dropdown — shows whenever we have spot data */}
+      {/* Suggested Metal Prices dropdown */}
       {(spotGold || spotSilver) && (
         <div style={{
-          background: C.card, border: `1px solid ${C.cardBorder}`,
-          borderRadius: 14, marginBottom: 14, overflow: "hidden",
+          background:C.card, border:`1px solid ${C.cardBorder}`,
+          borderRadius:14, marginBottom:14, overflow:"hidden",
         }}>
-          <button onClick={() => setShowSuggested(!showSuggested)} style={{
-            width: "100%", padding: "13px 16px", background: "transparent",
-            border: "none", display: "flex", alignItems: "center",
-            justifyContent: "space-between", color: C.textSoft, fontSize: 13, fontWeight: 500,
+          <button onClick={()=>setShowSuggested(!showSuggested)} style={{
+            width:"100%", padding:"13px 16px", background:"transparent",
+            border:"none", display:"flex", alignItems:"center",
+            justifyContent:"space-between", color:C.textSoft, fontSize:13, fontWeight:500,
           }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: C.gold }}>◆</span> Suggested Metal Prices
+            <span style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{color:C.gold}}>◆</span> Suggested Metal Prices
             </span>
-            <span style={{ fontSize: 12, color: C.textMute, transition: "transform 0.2s",
-              transform: showSuggested ? "rotate(90deg)" : "rotate(0)" }}>▸</span>
+            <span style={{ fontSize:12, color:C.textMute,
+              transform: showSuggested ? "rotate(90deg)" : "rotate(0)",
+              transition:"transform 0.2s" }}>▸</span>
           </button>
           {showSuggested && (
-            <div className="fade-in" style={{ padding: "0 16px 14px" }}>
-              <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 10px", lineHeight: 1.5 }}>
+            <div className="fade-in" style={{ padding:"0 16px 14px" }}>
+              <p style={{ fontSize:11, color:C.textMute, margin:"0 0 10px", lineHeight:1.5 }}>
                 Spot + ${PREMIUM_PER_OZ}/oz + {(METAL_LOSS*100).toFixed(0)}% metal loss + ${LABOR_GOLD}/g labor (${LABOR_SILVER}/g for silver)
               </p>
               {SUGGESTED_LIST.map(item => {
@@ -385,12 +406,13 @@ Null if not found. Numbers only.` }
                 if (!p) return null;
                 return (
                   <div key={item.name} style={{
-                    display: "flex", justifyContent: "space-between",
-                    alignItems: "center", padding: "9px 0",
-                    borderTop: `1px solid ${C.divider}`,
+                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                    padding:"9px 0", borderTop:`1px solid ${C.divider}`,
                   }}>
-                    <span style={{ fontSize: 13, color: C.textSoft }}>{item.name}</span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: C.gold }}>${p.toFixed(2)}<span style={{ fontSize: 11, color: C.textMute, fontWeight: 400 }}>/g</span></span>
+                    <span style={{ fontSize:13, color:C.textSoft }}>{item.name}</span>
+                    <span style={{ fontSize:14, fontWeight:600, color:C.gold }}>
+                      ${p.toFixed(2)}<span style={{ fontSize:11, color:C.textMute, fontWeight:400 }}>/g</span>
+                    </span>
                   </div>
                 );
               })}
@@ -424,7 +446,7 @@ Null if not found. Numbers only.` }
                 }}>{loading ? "Reading image…" : "Read CAD image"}</button>
               )}
               {extracted && (
-                <button onClick={()=>{ reset(); }} style={{
+                <button onClick={reset} style={{
                   flex:1, padding:"14px", fontSize:13.5, fontWeight:500,
                   color:C.textSoft, background:C.surface2, border:"none", borderRadius:12,
                 }}>Re-read image</button>
@@ -436,18 +458,17 @@ Null if not found. Numbers only.` }
             </div>
           </div>
         )}
-        {error && <p style={{ fontSize:12.5, color:"#E89494", marginTop:10, padding:"9px 13px", background:"rgba(232,148,148,0.08)", borderRadius:8, margin:"10px 0 0" }}>{error}</p>}
+        {error && <p style={{ fontSize:12.5, color:"#E89494", marginTop:10, padding:"9px 13px", background:"rgba(232,148,148,0.08)", borderRadius:8 }}>{error}</p>}
       </Card>
 
       {/* Step 2 — Config */}
       {showConfig && (<>
-        {/* Extracted specs */}
         <Card>
           <FieldLabel>Specifications</FieldLabel>
           {extracted?.notes && (
             <p style={{ fontSize:12.5, color:C.textSoft, background:C.surface, padding:"9px 13px", borderRadius:10, margin:"0 0 14px", lineHeight:1.5 }}>{extracted.notes}</p>
           )}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom: hasDims ? 12 : 0 }}>
             {[["Metal",editGrams,setEditGrams,"g"],["Round",editRound,setEditRound,"ct"],["Fancy",editFancy,setEditFancy,"ct"]].map(([lbl,v,setV,u])=>(
               <div key={lbl}>
                 <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>{lbl}</p>
@@ -459,9 +480,26 @@ Null if not found. Numbers only.` }
               </div>
             ))}
           </div>
+          {hasDims && (
+            <div style={{ borderTop:`1px solid ${C.divider}`, paddingTop:10 }}>
+              <p style={{ fontSize:11, color:C.textMute, margin:"0 0 8px", fontWeight:500 }}>Dimensions (inches)</p>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                {[["L","l"],["W","w"],["H","h"]].map(([lbl,key]) => editDims[key] && (
+                  <div key={key}>
+                    <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>{lbl}</p>
+                    <div style={{ position:"relative" }}>
+                      <input type="number" value={editDims[key]}
+                        onChange={e=>setEditDims(d=>({...d,[key]:e.target.value}))}
+                        step="0.001" style={{...inp, paddingRight:22, fontSize:13}} />
+                      <span style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", fontSize:10, color:C.textMute }}>in</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
-        {/* Metal selector */}
         <Card>
           <FieldLabel>Metal</FieldLabel>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
@@ -469,7 +507,6 @@ Null if not found. Numbers only.` }
           </div>
         </Card>
 
-        {/* Round diamonds */}
         {hasRound && (
           <Card>
             <FieldLabel>Round Diamonds</FieldLabel>
@@ -485,7 +522,6 @@ Null if not found. Numbers only.` }
           </Card>
         )}
 
-        {/* Fancy diamonds */}
         {hasFancy && (
           <Card>
             <FieldLabel>Fancy Diamonds</FieldLabel>
@@ -505,13 +541,14 @@ Null if not found. Numbers only.` }
           </div>
           <div style={{ padding:"0 18px" }}>
             {[
-              [true,  "Metal",  `${metal} · ${fmtD(grams)}g`],
-              [hasRound,"Round",`${roundType.replace("Natural · ","")} · ${fmtD(roundCt)}ct`],
-              [hasFancy,"Fancy",`${fancyType?.replace(" (Modified Emerald)","")} · ${fmtD(fancyCt)}ct`],
+              [true,   "Metal",  `${metal} · ${fmtD(grams)}g`],
+              [hasRound,"Round", `${roundType.replace("Natural · ","")} · ${fmtD(roundCt)}ct`],
+              [hasFancy,"Fancy", `${fancyType?.replace(" (Modified Emerald)","")} · ${fmtD(fancyCt)}ct`],
+              [hasDims, "Dimensions", [editDims.l&&`L ${editDims.l}"`,editDims.w&&`W ${editDims.w}"`,editDims.h&&`H ${editDims.h}"`].filter(Boolean).join(" × ")],
             ].filter(([show])=>show).map(([,lbl,val])=>(
               <div key={lbl} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderTop:`1px solid ${C.divider}` }}>
                 <span style={{ color:C.textSoft, fontSize:14 }}>{lbl}</span>
-                <span style={{ fontSize:14, fontWeight:500, textAlign:"right" }}>{val}</span>
+                <span style={{ fontSize:14, fontWeight:500, textAlign:"right", maxWidth:"60%" }}>{val}</span>
               </div>
             ))}
           </div>
