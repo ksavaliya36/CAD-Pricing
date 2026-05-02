@@ -60,7 +60,6 @@ const FANCY_TYPES = {
   "Natural (Modified Emerald)":[450],
 };
 const MARKUP         = 0.18;
-const QUALITY_LABELS = ["Standard","Premium","Superior","Exceptional"];
 
 // ── Palette ────────────────────────────────────────────────────────────────
 const C = {
@@ -240,11 +239,11 @@ function App() {
             { type:"image", source:{ type:"base64", media_type:imageMime, data:imageB64 } },
             { type:"text", text:`Jewelry CAD spec sheet. Return ONLY valid JSON, no markdown:
 {"grams":<number|null>,"metal_type":"<10K Gold|14K Gold|18K Gold|925 Silver|null>","round_carats":<number|null>,"round_type":"<Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null>","fancy_carats":<number|null>,"fancy_type":"<Moissanite|CVD Lab|Natural (Modified Emerald)|null>","notes":"<brief summary>"}
-- Gram weight: grams, wt, weight, gr, g
-- Metal type: 10K/14K/18K Gold or 925/Silver/Sterling
+- Gram weight: grams, wt, weight, gr, g, gms, SW (silver weight), GW (gold weight)
+- Metal type: 10K/14K/18K Gold or 925/Silver/Sterling; if weight label is SW or metal noted as 925/GMS(925), use 925 Silver
 - Round carats: RD, Round, DW, R
 - Round type: Moissanite(Moiss/MOI), CVD Lab(CVD/Lab/LG), Natural · Single Cut(SC), Natural · Full Cut(FC/Brilliant/Natural)
-- Fancy carats: Fancy, FD, Pear, Marquise, Princess, Oval, Cushion, Emerald
+- Fancy carats: Fancy, FD, Pear, Marquise, Princess, Oval, Cushion, Emerald, BUG/Baguette (add BUG + Fancy carats together if both present)
 - Fancy type: Moissanite, CVD Lab, Natural (Modified Emerald)
 Null if not found. Numbers only for numeric fields.` }
           ]}]
@@ -480,12 +479,12 @@ Null if not found. Numbers only for numeric fields.` }
           <Card>
             <FieldLabel>Round Diamonds</FieldLabel>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom: roundType && ROUND_TYPES[roundType].length>1 ? 14 : 0 }}>
-              {Object.keys(ROUND_TYPES).map(k=><Pill key={k} active={roundType===k} onClick={()=>handleRoundType(k)}>{k}</Pill>)}
+              {Object.keys(ROUND_TYPES).map(k=><Pill key={k} active={roundType===k} onClick={()=>handleRoundType(k)}>{k}{ROUND_TYPES[k].length===1 ? ` · $${ROUND_TYPES[k][0]}/ct` : ""}</Pill>)}
             </div>
             {roundType && ROUND_TYPES[roundType].length>1 && (<>
               <p style={{ fontSize:11, color:C.textMute, margin:"0 0 8px", fontWeight:500 }}>Quality grade</p>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                {ROUND_TYPES[roundType].map((p,i)=><Pill key={p} active={roundPPC===p} onClick={()=>setRoundPPC(p)} full>{QUALITY_LABELS[i]}</Pill>)}
+                {ROUND_TYPES[roundType].map((p)=><Pill key={p} active={roundPPC===p} onClick={()=>setRoundPPC(p)} full>${p}/ct</Pill>)}
               </div>
             </>)}
           </Card>
@@ -495,7 +494,7 @@ Null if not found. Numbers only for numeric fields.` }
           <Card>
             <FieldLabel>Fancy Diamonds</FieldLabel>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {Object.keys(FANCY_TYPES).map(k=><Pill key={k} active={fancyType===k} onClick={()=>handleFancyType(k)}>{k}</Pill>)}
+              {Object.keys(FANCY_TYPES).map(k=><Pill key={k} active={fancyType===k} onClick={()=>handleFancyType(k)}>{k}{FANCY_TYPES[k].length===1 ? ` · $${FANCY_TYPES[k][0]}/ct` : ""}</Pill>)}
             </div>
           </Card>
         )}
