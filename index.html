@@ -1,0 +1,386 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.5">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1">&lt;meta charset="UTF-8" /&gt;</p>
+<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" /&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-capable" content="yes" /&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-title" content="CAD Pricing" /&gt;</p>
+<p class="p1">&lt;meta name="theme-color" content="#0B0F14" /&gt;</p>
+<p class="p1">&lt;link rel="apple-touch-icon" href="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;rect width='100' height='100' rx='22' fill='%230B0F14'/&gt;&lt;text x='50' y='66' text-anchor='middle' font-size='52' fill='%23D4A574'&gt;%E2%97%88&lt;/text&gt;&lt;/svg&gt;" /&gt;</p>
+<p class="p1">&lt;title&gt;CAD Pricing&lt;/title&gt;</p>
+<p class="p1">&lt;script src="https://unpkg.com/react@18/umd/react.production.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;script src="https://unpkg.com/@babel/standalone/babel.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>html,body{margin:0;padding:0;background:#0B0F14;min-height:100vh;min-height:100dvh}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',sans-serif;color:#fff;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>input,button,select{font-family:inherit}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>input[type=number]{-moz-appearance:textfield}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>button{cursor:pointer}</p>
+<p class="p1">&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1">&lt;div id="root"&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script type="text/babel"&gt;</p>
+<p class="p1">const { useState, useRef } = React;</p>
+<p class="p2"><br></p>
+<p class="p1">const METAL_PRICES = { "10K Gold": 83, "14K Gold": 110, "18K Gold": 140, "925 Silver": 10 };</p>
+<p class="p1">const ROUND_TYPES = { "Moissanite": [10], "CVD Lab": [90], "Natural · Single Cut": [105, 155], "Natural · Full Cut": [225, 275, 325, 400] };</p>
+<p class="p1">const FANCY_TYPES = { "Moissanite": [15], "CVD Lab": [140], "Natural (Modified Emerald)": [450] };</p>
+<p class="p1">const MARKUP = 0.18;</p>
+<p class="p2"><br></p>
+<p class="p1">const C = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>bg: "#0B0F14", card: "#161B23", cardBorder: "rgba(255,255,255,0.06)",</p>
+<p class="p1"><span class="Apple-converted-space">  </span>surface: "#1E242E", surface2: "#252B36",</p>
+<p class="p1"><span class="Apple-converted-space">  </span>text: "#FFFFFF", textSoft: "#A8AEB8", textMute: "#6B7280",</p>
+<p class="p1"><span class="Apple-converted-space">  </span>gold: "#D4A574", divider: "rgba(255,255,255,0.05)",</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">function fmt(n) { return "$" + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }</p>
+<p class="p1">function fmtDecimal(n) { return Number(n).toFixed(2); }</p>
+<p class="p2"><br></p>
+<p class="p1">function Pill({ active, onClick, children, full }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onClick={onClick} style={{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: "10px 16px", borderRadius: 12, fontSize: 13, fontWeight: 500,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border: active ? `1px solid ${C.gold}` : `1px solid transparent`,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: active ? "transparent" : C.surface2,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: active ? C.gold : C.textSoft,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>transition: "all 0.18s", flex: full ? 1 : "0 1 auto",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>textAlign: "center", whiteSpace: "nowrap",</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}}&gt;{children}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function Card({ children, style }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return &lt;div style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 18, padding: 18, marginBottom: 14, ...style }}&gt;{children}&lt;/div&gt;;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function FieldLabel({ children }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return &lt;p style={{ fontSize: 11, fontWeight: 600, color: C.textMute, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}&gt;{children}&lt;/p&gt;;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function App() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [image, setImage] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [imageB64, setImageB64] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [imageMime, setImageMime] = useState("image/jpeg");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [loading, setLoading] = useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [error, setError] = useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [extracted, setExtracted] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [editGrams, setEditGrams] = useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [editRound, setEditRound] = useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [editFancy, setEditFancy] = useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [jobName, setJobName] = useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [jobNum, setJobNum] = useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [apiKey, setApiKey] = useState(localStorage.getItem("anthropic_key") || "");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem("anthropic_key"));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const fileRef = useRef();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [metal, setMetal] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [roundType, setRoundType] = useState("Natural · Full Cut");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [roundPPC, setRoundPPC] = useState(225);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [fancyType, setFancyType] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [fancyPPC, setFancyPPC] = useState(null);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const hasRound = parseFloat(editRound) &gt; 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const hasFancy = parseFloat(editFancy) &gt; 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const showConfig = extracted !== null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const roundReady = !hasRound || (roundType !== null &amp;&amp; roundPPC !== null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const fancyReady = !hasFancy || (fancyType !== null &amp;&amp; fancyPPC !== null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const showSummary = showConfig &amp;&amp; metal !== null &amp;&amp; roundReady &amp;&amp; fancyReady;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const metalPPG = metal ? METAL_PRICES[metal] : 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const grams = parseFloat(editGrams) || 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const roundCt = parseFloat(editRound) || 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const fancyCt = parseFloat(editFancy) || 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const subtotal = grams * metalPPG + roundCt * (roundPPC || 0) + fancyCt * (fancyPPC || 0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rawFinal = subtotal * (1 + MARKUP);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const finalPrice = rawFinal &lt; 1500 ? Math.ceil(rawFinal / 10) * 10 : Math.ceil(rawFinal / 50) * 50;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function handleRoundType(t) { setRoundType(t); setRoundPPC(ROUND_TYPES[t][0]); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>function handleFancyType(t) { setFancyType(t); setFancyPPC(FANCY_TYPES[t][0]); }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function reset() {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setExtracted(null); setError("");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setEditGrams(""); setEditRound(""); setEditFancy("");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setMetal(null); setFancyType(null); setFancyPPC(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function saveKey() {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>localStorage.setItem("anthropic_key", apiKey);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setShowKeyInput(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function handleFile(e) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const file = e.target.files[0]; if (!file) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>reset();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setImage(URL.createObjectURL(file));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setImageMime(file.type || "image/jpeg");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const reader = new FileReader();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>reader.onload = () =&gt; setImageB64(reader.result.split(",")[1]);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>reader.readAsDataURL(file);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>async function analyze() {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (!imageB64) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (!apiKey) { setShowKeyInput(true); return; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setLoading(true); setError(""); reset();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const res = await fetch("https://api.anthropic.com/v1/messages", {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>method: "POST",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>headers: {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"Content-Type": "application/json",</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"x-api-key": apiKey,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"anthropic-version": "2023-06-01",</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"anthropic-dangerous-direct-browser-access": "true",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>},</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body: JSON.stringify({</p>
+<p class="p1"><span class="Apple-converted-space">          </span>model: "claude-sonnet-4-5", max_tokens: 1000,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>messages: [{ role: "user", content: [</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ type: "image", source: { type: "base64", media_type: imageMime, data: imageB64 } },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ type: "text", text: `Jewelry CAD spec sheet. Return ONLY valid JSON, no markdown:</p>
+<p class="p1">{"grams":&lt;number|null&gt;,"metal_type":"&lt;10K Gold|14K Gold|18K Gold|925 Silver|null&gt;","round_carats":&lt;number|null&gt;,"round_type":"&lt;Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null&gt;","fancy_carats":&lt;number|null&gt;,"fancy_type":"&lt;Moissanite|CVD Lab|Natural (Modified Emerald)|null&gt;","notes":"&lt;brief summary&gt;"}</p>
+<p class="p1">- Gram weight: grams, wt, weight, gr, g</p>
+<p class="p1">- Metal type: 10K/14K/18K Gold or 925/Silver/Sterling</p>
+<p class="p1">- Round carats: RD, Round, DW, R</p>
+<p class="p1">- Round type: Moissanite (Moiss/MOI), CVD Lab (CVD/Lab/LG), Natural · Single Cut (SC), Natural · Full Cut (FC/Brilliant/Natural)</p>
+<p class="p1">- Fancy carats: Fancy, FD, Pear, Marquise, Princess, Oval, Cushion, Emerald</p>
+<p class="p1">- Fancy type: Moissanite, CVD Lab, Natural (Modified Emerald)</p>
+<p class="p1">Null if not found. Numbers only for numeric fields.` }</p>
+<p class="p1"><span class="Apple-converted-space">          </span>]}]</p>
+<p class="p1"><span class="Apple-converted-space">        </span>})</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (!res.ok) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const errText = await res.text();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>throw new Error(`API error: ${res.status} ${errText.slice(0, 100)}`);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const data = await res.json();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const raw = data.content.filter(b =&gt; b.type === "text").map(b =&gt; b.text).join("");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setExtracted(parsed);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setEditGrams(parsed.grams != null ? String(parsed.grams) : "");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setEditRound(parsed.round_carats != null ? String(parsed.round_carats) : "");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setEditFancy(parsed.fancy_carats != null ? String(parsed.fancy_carats) : "");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (parsed.metal_type &amp;&amp; METAL_PRICES[parsed.metal_type]) setMetal(parsed.metal_type);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (parsed.round_type &amp;&amp; ROUND_TYPES[parsed.round_type]) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setRoundType(parsed.round_type);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setRoundPPC(ROUND_TYPES[parsed.round_type][0]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (parsed.fancy_type &amp;&amp; FANCY_TYPES[parsed.fancy_type]) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setFancyType(parsed.fancy_type);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setFancyPPC(FANCY_TYPES[parsed.fancy_type][0]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>} catch (e) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setError(e.message || "Could not read the image. Please try again.");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setLoading(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const inputStyle = {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>width: "100%", padding: "13px 14px", fontSize: 15, color: C.text,</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: C.surface, border: "none", borderRadius: 12, outline: "none", fontWeight: 500,</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{ background: C.bg, padding: "20px 18px 28px", maxWidth: 480, margin: "0 auto", minHeight: "100vh" }}&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* API Key prompt */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{showKeyInput &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card style={{ background: "#1F1813", borderColor: C.gold }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;FieldLabel&gt;&lt;span style={{color: C.gold}}&gt;One-time setup&lt;/span&gt;&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p style={{ fontSize: 13, color: C.textSoft, margin: "0 0 12px", lineHeight: 1.5 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>Paste your Anthropic API key to enable CAD reading. It's saved on this device only.</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input type="password" value={apiKey} onChange={e =&gt; setApiKey(e.target.value)} placeholder="sk-ant-..." style={{...inputStyle, marginBottom: 10}} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={saveKey} disabled={!apiKey} style={{</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: "100%", padding: "13px", fontSize: 14, fontWeight: 600,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: "#1A1410", background: apiKey ? C.gold : C.textMute,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: "none", borderRadius: 12,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}}&gt;Save &amp; continue&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p style={{ fontSize: 11, color: C.textMute, margin: "10px 0 0", lineHeight: 1.4 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>Get a key at console.anthropic.com → API Keys</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* Header */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22, gap: 10 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={() =&gt; { setImage(null); setImageB64(null); reset(); if(fileRef.current)fileRef.current.value=""; }}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>style={{ width: 38, height: 38, borderRadius: "50%", background: C.surface, border: "none", color: C.gold, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}&gt;‹&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}&gt;CAD&lt;br/&gt;Pricing&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;p style={{ fontSize: 13, color: C.textMute, margin: "4px 0 0" }}&gt;Instant quote from CAD&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onClick={() =&gt; setShowKeyInput(true)} style={{ width: 36, height: 36, borderRadius: "50%", background: C.surface, border: "none", color: C.textSoft, fontSize: 16 }}&gt;⚙&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* Job info */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{ display: "grid", gridTemplateColumns: "1fr 110px", gap: 10, marginBottom: 14 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;FieldLabel&gt;Job name&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input value={jobName} onChange={e =&gt; setJobName(e.target.value)} placeholder="e.g. Engagement Ring" style={inputStyle} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;FieldLabel&gt;Job #&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input value={jobNum} onChange={e =&gt; setJobNum(e.target.value)} placeholder="J1042" style={inputStyle} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* Upload */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;Card style={{ padding: image ? 14 : 18 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;FieldLabel&gt;CAD Image&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{!image ? (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div onClick={() =&gt; fileRef.current.click()} style={{ borderRadius: 14, padding: "30px 16px", textAlign: "center", background: C.surface, border: `1px dashed ${C.cardBorder}` }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{ fontSize: 32, color: C.gold, marginBottom: 8 }}&gt;◈&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;p style={{ fontSize: 14, fontWeight: 500, margin: "0 0 4px" }}&gt;Tap to upload CAD image&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;p style={{ fontSize: 12, color: C.textMute, margin: 0 }}&gt;JPG, PNG, or WEBP&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>) : (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;img src={image} style={{ width: "100%", borderRadius: 12, maxHeight: 240, objectFit: "contain", display: "block", background: C.surface, marginBottom: 12 }} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{!extracted &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;button onClick={analyze} disabled={loading} style={{</p>
+<p class="p1"><span class="Apple-converted-space">                </span>width: "100%", padding: "14px", fontSize: 14.5, fontWeight: 600,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>color: "#1A1410", background: loading ? C.textMute : C.gold,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>border: "none", borderRadius: 12,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}}&gt;{loading ? "Reading image…" : "Read CAD image"}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{error &amp;&amp; &lt;p style={{ fontSize: 12.5, color: "#E89494", marginTop: 10, padding: "8px 12px", background: "rgba(232,148,148,0.1)", borderRadius: 8 }}&gt;{error}&lt;/p&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/Card&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{showConfig &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;FieldLabel&gt;Specifications&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{[["Metal", editGrams, setEditGrams, "g"], ["Round", editRound, setEditRound, "ct"], ["Fancy", editFancy, setEditFancy, "ct"]].map(([lbl, v, setV, u]) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div key={lbl}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;p style={{ fontSize: 11, color: C.textMute, margin: "0 0 6px", fontWeight: 500 }}&gt;{lbl}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div style={{ position: "relative" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;input type="number" value={v} onChange={e =&gt; setV(e.target.value)} placeholder="0" step="0.01" style={{ ...inputStyle, paddingRight: 30, fontSize: 14 }} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}&gt;{u}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/Card&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;FieldLabel&gt;Metal&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{Object.keys(METAL_PRICES).map(k =&gt; &lt;Pill key={k} active={metal === k} onClick={() =&gt; setMetal(k)} full&gt;{k}&lt;/Pill&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/Card&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>{hasRound &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;FieldLabel&gt;Round Diamonds&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: roundType &amp;&amp; ROUND_TYPES[roundType].length &gt; 1 ? 14 : 0 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{Object.keys(ROUND_TYPES).map(k =&gt; &lt;Pill key={k} active={roundType === k} onClick={() =&gt; handleRoundType(k)}&gt;{k}&lt;/Pill&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{roundType &amp;&amp; ROUND_TYPES[roundType].length &gt; 1 &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;p style={{ fontSize: 11, color: C.textMute, margin: "0 0 8px", fontWeight: 500 }}&gt;Quality grade&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>{ROUND_TYPES[roundType].map((p, i) =&gt; &lt;Pill key={p} active={roundPPC === p} onClick={() =&gt; setRoundPPC(p)} full&gt;{["Standard", "Premium", "Superior", "Exceptional"][i]}&lt;/Pill&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>)}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>{hasFancy &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;FieldLabel&gt;Fancy Diamonds&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{Object.keys(FANCY_TYPES).map(k =&gt; &lt;Pill key={k} active={fancyType === k} onClick={() =&gt; handleFancyType(k)}&gt;{k}&lt;/Pill&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{showSummary &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card style={{ padding: 0, overflow: "hidden", marginTop: 18 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{ padding: "16px 18px", display: "flex", alignItems: "center", gap: 8 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;span style={{ color: C.gold, fontSize: 14 }}&gt;◆&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;FieldLabel&gt;&lt;span style={{ color: C.gold }}&gt;Quote Summary&lt;/span&gt;&lt;/FieldLabel&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{ padding: "0 18px" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${C.divider}` }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span style={{ color: C.textSoft, fontSize: 14 }}&gt;Metal&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span style={{ fontSize: 14, fontWeight: 500 }}&gt;{metal} · {fmtDecimal(grams)}g&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{hasRound &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${C.divider}` }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span style={{ color: C.textSoft, fontSize: 14 }}&gt;Round&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span style={{ fontSize: 14, fontWeight: 500, textAlign: "right" }}&gt;{roundType.replace("Natural · ", "")} · {fmtDecimal(roundCt)}ct&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{hasFancy &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${C.divider}` }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span style={{ color: C.textSoft, fontSize: 14 }}&gt;Fancy&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span style={{ fontSize: 14, fontWeight: 500, textAlign: "right" }}&gt;{fancyType.replace(" (Modified Emerald)", "")} · {fmtDecimal(fancyCt)}ct&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{ background: C.surface, padding: "20px 18px", marginTop: 4 }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span style={{ color: C.gold, fontSize: 14, fontWeight: 600 }}&gt;Grand Total&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span style={{ color: C.gold, fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em" }}&gt;{fmt(finalPrice)}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{(jobName || jobNum) &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;p style={{ fontSize: 11.5, color: C.textMute, margin: "4px 0 0", textAlign: "right" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{jobName}{jobName &amp;&amp; jobNum ? " · " : ""}{jobNum &amp;&amp; `#${jobNum}`}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{ padding: 14, background: C.surface }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onClick={() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const text = `Quote\n${jobName ? jobName + " " : ""}${jobNum ? "#" + jobNum : ""}\n\n${metal} · ${fmtDecimal(grams)}g${hasRound ? `\n${roundType} · ${fmtDecimal(roundCt)}ct rounds` : ""}${hasFancy ? `\n${fancyType} · ${fmtDecimal(fancyCt)}ct fancy` : ""}\n\nTotal: ${fmt(finalPrice)}`;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (navigator.share) navigator.share({ text }); else { navigator.clipboard.writeText(text); alert("Copied to clipboard!"); }</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}} style={{</p>
+<p class="p1"><span class="Apple-converted-space">              </span>width: "100%", padding: "15px", fontSize: 15, fontWeight: 600,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>color: "#1A1410", background: C.gold, border: "none", borderRadius: 14,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>display: "flex", alignItems: "center", justifyContent: "center", gap: 8,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}}&gt;&lt;span style={{ fontSize: 16 }}&gt;↑&lt;/span&gt; Export Quote&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p style={{ fontSize: 11, color: C.textMute, textAlign: "center", margin: "20px 0 0", letterSpacing: "0.05em" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>Prime Wholesale · Quote valid for 7 days</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">ReactDOM.createRoot(document.getElementById("root")).render(&lt;App /&gt;);</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
