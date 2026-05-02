@@ -48,7 +48,6 @@ const METAL_LOSS     = 0.05;
 const LABOR_GOLD     = 9;
 const LABOR_SILVER   = 7;
 const TROY_OZ        = 31.1035;
-const MM_TO_IN       = 0.03937;
 const ROUND_TYPES    = {
   "Moissanite":           [10],
   "CVD Lab":              [90],
@@ -127,7 +126,6 @@ function App() {
   const [editGrams,  setEditGrams]  = useState("");
   const [editRound,  setEditRound]  = useState("");
   const [editFancy,  setEditFancy]  = useState("");
-  const [editDims,   setEditDims]   = useState({ l: null, w: null, h: null });
 
   // Pricing selections
   const [metal,     setMetal]     = useState(null);
@@ -141,7 +139,6 @@ function App() {
   // Derived
   const hasRound    = parseFloat(editRound) > 0;
   const hasFancy    = parseFloat(editFancy) > 0;
-  const hasDims     = editDims.l || editDims.w || editDims.h;
   const showConfig  = extracted !== null;
   const roundReady  = !hasRound || (roundType && roundPPC);
   const fancyReady  = !hasFancy || (fancyType && fancyPPC);
@@ -206,7 +203,6 @@ function App() {
   function reset() {
     setExtracted(null); setError("");
     setEditGrams(""); setEditRound(""); setEditFancy("");
-    setEditDims({ l: null, w: null, h: null });
     setMetal(null); setFancyType(null); setFancyPPC(null);
   }
 
@@ -243,14 +239,13 @@ function App() {
           messages:[{ role:"user", content:[
             { type:"image", source:{ type:"base64", media_type:imageMime, data:imageB64 } },
             { type:"text", text:`Jewelry CAD spec sheet. Return ONLY valid JSON, no markdown:
-{"grams":<number|null>,"metal_type":"<10K Gold|14K Gold|18K Gold|925 Silver|null>","round_carats":<number|null>,"round_type":"<Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null>","fancy_carats":<number|null>,"fancy_type":"<Moissanite|CVD Lab|Natural (Modified Emerald)|null>","dimensions_mm":{"length":<number|null>,"width":<number|null>,"height":<number|null>},"notes":"<brief summary>"}
+{"grams":<number|null>,"metal_type":"<10K Gold|14K Gold|18K Gold|925 Silver|null>","round_carats":<number|null>,"round_type":"<Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null>","fancy_carats":<number|null>,"fancy_type":"<Moissanite|CVD Lab|Natural (Modified Emerald)|null>","notes":"<brief summary>"}
 - Gram weight: grams, wt, weight, gr, g
 - Metal type: 10K/14K/18K Gold or 925/Silver/Sterling
 - Round carats: RD, Round, DW, R
 - Round type: Moissanite(Moiss/MOI), CVD Lab(CVD/Lab/LG), Natural · Single Cut(SC), Natural · Full Cut(FC/Brilliant/Natural)
 - Fancy carats: Fancy, FD, Pear, Marquise, Princess, Oval, Cushion, Emerald
 - Fancy type: Moissanite, CVD Lab, Natural (Modified Emerald)
-- Dimensions: look for L/W/H, length/width/height/depth values in mm
 Null if not found. Numbers only for numeric fields.` }
           ]}]
         })
@@ -266,18 +261,11 @@ Null if not found. Numbers only for numeric fields.` }
       if (parsed.metal_type && METAL_FALLBACK[parsed.metal_type]) setMetal(parsed.metal_type);
       if (parsed.round_type && ROUND_TYPES[parsed.round_type]) { setRoundType(parsed.round_type); setRoundPPC(ROUND_TYPES[parsed.round_type][0]); }
       if (parsed.fancy_type && FANCY_TYPES[parsed.fancy_type]) { setFancyType(parsed.fancy_type); setFancyPPC(FANCY_TYPES[parsed.fancy_type][0]); }
-      // Convert dimensions from mm to inches
-      const dims = parsed.dimensions_mm || {};
-      const toIn = v => v != null ? (v * MM_TO_IN).toFixed(3) : null;
-      setEditDims({ l: toIn(dims.length), w: toIn(dims.width), h: toIn(dims.height) });
     } catch(e) { setError(e.message || "Could not read image. Please try again."); }
     setLoading(false);
   }
 
   function doExport() {
-    const dimStr = hasDims
-      ? `\nDimensions: ${[editDims.l && `L ${editDims.l}"`, editDims.w && `W ${editDims.w}"`, editDims.h && `H ${editDims.h}"`].filter(Boolean).join(" × ")}`
-      : "";
     const lines = [
       "PRIME WHOLESALE — CAD QUOTE",
       "─────────────────────────────",
@@ -285,7 +273,6 @@ Null if not found. Numbers only for numeric fields.` }
       `Metal:  ${metal} · ${fmtD(grams)}g`,
       hasRound && `Round:  ${roundType} · ${fmtD(roundCt)}ct`,
       hasFancy && `Fancy:  ${fancyType} · ${fmtD(fancyCt)}ct`,
-      hasDims  && `Dimensions: ${[editDims.l && `L ${editDims.l}"`, editDims.w && `W ${editDims.w}"`, editDims.h && `H ${editDims.h}"`].filter(Boolean).join(" × ")}`,
       "",
       `TOTAL:  ${fmt(finalPrice)}`,
       "",
@@ -468,7 +455,7 @@ Null if not found. Numbers only for numeric fields.` }
           {extracted?.notes && (
             <p style={{ fontSize:12.5, color:C.textSoft, background:C.surface, padding:"9px 13px", borderRadius:10, margin:"0 0 14px", lineHeight:1.5 }}>{extracted.notes}</p>
           )}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom: hasDims ? 12 : 0 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
             {[["Metal",editGrams,setEditGrams,"g"],["Round",editRound,setEditRound,"ct"],["Fancy",editFancy,setEditFancy,"ct"]].map(([lbl,v,setV,u])=>(
               <div key={lbl}>
                 <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>{lbl}</p>
@@ -480,24 +467,6 @@ Null if not found. Numbers only for numeric fields.` }
               </div>
             ))}
           </div>
-          {hasDims && (
-            <div style={{ borderTop:`1px solid ${C.divider}`, paddingTop:10 }}>
-              <p style={{ fontSize:11, color:C.textMute, margin:"0 0 8px", fontWeight:500 }}>Dimensions (inches)</p>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-                {[["L","l"],["W","w"],["H","h"]].map(([lbl,key]) => editDims[key] && (
-                  <div key={key}>
-                    <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>{lbl}</p>
-                    <div style={{ position:"relative" }}>
-                      <input type="number" value={editDims[key]}
-                        onChange={e=>setEditDims(d=>({...d,[key]:e.target.value}))}
-                        step="0.001" style={{...inp, paddingRight:22, fontSize:13}} />
-                      <span style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", fontSize:10, color:C.textMute }}>in</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </Card>
 
         <Card>
@@ -544,7 +513,6 @@ Null if not found. Numbers only for numeric fields.` }
               [true,   "Metal",  `${metal} · ${fmtD(grams)}g`],
               [hasRound,"Round", `${roundType.replace("Natural · ","")} · ${fmtD(roundCt)}ct`],
               [hasFancy,"Fancy", `${fancyType?.replace(" (Modified Emerald)","")} · ${fmtD(fancyCt)}ct`],
-              [hasDims, "Dimensions", [editDims.l&&`L ${editDims.l}"`,editDims.w&&`W ${editDims.w}"`,editDims.h&&`H ${editDims.h}"`].filter(Boolean).join(" × ")],
             ].filter(([show])=>show).map(([,lbl,val])=>(
               <div key={lbl} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderTop:`1px solid ${C.divider}` }}>
                 <span style={{ color:C.textSoft, fontSize:14 }}>{lbl}</span>
