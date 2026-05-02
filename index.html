@@ -1,193 +1,167 @@
-import { useState, useRef } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="CAD Pricing" />
+<meta name="theme-color" content="#0B0F14" />
+<title>CAD Pricing — Prime Wholesale</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #0B0F14; min-height: 100vh; min-height: 100dvh; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; color: #fff; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  input, button, select { font-family: inherit; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  input::placeholder { color: #4B5260; }
+  button { cursor: pointer; }
+  .fade-in { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
 
-// Fallback prices (used if live fetch fails)
+// ── Constants ──────────────────────────────────────────────────────────────
 const METAL_FALLBACK = { "10K Gold": 83, "14K Gold": 110, "18K Gold": 140, "925 Silver": 10 };
-// Karat purities
-const KARAT_PURITY = { "10K Gold": 10/24, "14K Gold": 14/24, "18K Gold": 18/24, "925 Silver": 0.925 };
-const TROY_OZ_TO_GRAMS = 31.1035;
-const ROUND_TYPES = { "Moissanite": [10], "CVD Lab": [90], "Natural · Single Cut": [105, 155], "Natural · Full Cut": [225, 275, 325, 400] };
-const FANCY_TYPES = { "Moissanite": [15], "CVD Lab": [140], "Natural (Modified Emerald)": [450] };
-const MARKUP = 0.18;
+const KARAT_PURITY   = { "10K Gold": 10/24, "14K Gold": 14/24, "18K Gold": 18/24, "925 Silver": 0.925 };
+const TROY_OZ        = 31.1035;
+const ROUND_TYPES    = { "Moissanite": [10], "CVD Lab": [90], "Natural · Single Cut": [105,155], "Natural · Full Cut": [225,275,325,400] };
+const FANCY_TYPES    = { "Moissanite": [15], "CVD Lab": [140], "Natural (Modified Emerald)": [450] };
+const MARKUP         = 0.18;
+const QUALITY_LABELS = ["Standard","Premium","Superior","Exceptional"];
 
-// Dark theme palette inspired by reference UI
+// ── Palette ────────────────────────────────────────────────────────────────
 const C = {
-  bg:         "#0B0F14",
-  card:       "#161B23",
-  cardBorder: "rgba(255, 255, 255, 0.06)",
-  cardActive: "rgba(212, 165, 116, 0.4)",
-  surface:    "#1E242E",
-  surface2:   "#252B36",
-  text:       "#FFFFFF",
-  textSoft:   "#A8AEB8",
-  textMute:   "#6B7280",
-  gold:       "#D4A574",
-  goldSoft:   "rgba(212, 165, 116, 0.12)",
-  goldBorder: "rgba(212, 165, 116, 0.5)",
-  greenSoft:  "rgba(76, 110, 90, 0.25)",
-  green:      "#7FA88E",
-  divider:    "rgba(255, 255, 255, 0.05)",
+  bg:"#0B0F14", card:"#161B23", cardBorder:"rgba(255,255,255,0.06)",
+  surface:"#1E242E", surface2:"#252B36",
+  text:"#FFFFFF", textSoft:"#A8AEB8", textMute:"#6B7280",
+  gold:"#D4A574", goldBorder:"rgba(212,165,116,0.5)",
+  divider:"rgba(255,255,255,0.05)", green:"#4CAF82",
 };
 
-function fmt(n) { return "$" + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
-function fmtDecimal(n) { return Number(n).toFixed(2); }
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n)  { return "$" + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+function fmtD(n) { return Number(n).toFixed(2); }
 
-// Components
+// ── Mini components ────────────────────────────────────────────────────────
 function Pill({ active, onClick, children, full }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "10px 16px",
-        borderRadius: 12,
-        fontSize: 13,
-        fontWeight: 500,
-        cursor: "pointer",
-        border: active ? `1px solid ${C.gold}` : `1px solid transparent`,
-        background: active ? "transparent" : C.surface2,
-        color: active ? C.gold : C.textSoft,
-        transition: "all 0.18s",
-        fontFamily: "inherit",
-        flex: full ? 1 : "0 1 auto",
-        textAlign: "center",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {children}
-    </button>
+    <button onClick={onClick} style={{
+      padding:"10px 16px", borderRadius:12, fontSize:13, fontWeight:500,
+      border: active ? `1px solid ${C.gold}` : "1px solid transparent",
+      background: active ? "transparent" : C.surface2,
+      color: active ? C.gold : C.textSoft,
+      transition:"all 0.18s", flex: full ? 1 : "0 1 auto",
+      textAlign:"center", whiteSpace:"nowrap",
+    }}>{children}</button>
   );
 }
 
 function Card({ children, style }) {
   return (
-    <div style={{
-      background: C.card,
-      border: `1px solid ${C.cardBorder}`,
-      borderRadius: 18,
-      padding: 18,
-      marginBottom: 14,
-      ...style,
-    }}>
-      {children}
-    </div>
+    <div className="fade-in" style={{
+      background:C.card, border:`1px solid ${C.cardBorder}`,
+      borderRadius:18, padding:18, marginBottom:14, ...style,
+    }}>{children}</div>
   );
 }
 
 function FieldLabel({ children }) {
-  return (
-    <p style={{
-      fontSize: 11,
-      fontWeight: 600,
-      color: C.textMute,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      margin: "0 0 8px",
-    }}>
-      {children}
-    </p>
-  );
+  return <p style={{ fontSize:11, fontWeight:600, color:C.textMute, letterSpacing:"0.12em", textTransform:"uppercase", margin:"0 0 8px" }}>{children}</p>;
 }
 
-function IconBtn({ children, onClick, primary }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        width: primary ? "auto" : 40,
-        height: 40,
-        padding: primary ? "0 16px" : 0,
-        borderRadius: 999,
-        border: "none",
-        background: primary ? C.gold : C.surface,
-        color: primary ? "#1A1410" : C.textSoft,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        fontSize: 14,
-        fontWeight: 600,
-        fontFamily: "inherit",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+// ── Main App ───────────────────────────────────────────────────────────────
+function App() {
+  // API key
+  const [apiKey,       setApiKey]       = useState(() => localStorage.getItem("pw_api_key") || "");
+  const [showKeyInput, setShowKeyInput] = useState(() => !localStorage.getItem("pw_api_key"));
 
-export default function CADPricingTool() {
-  const [metalPrices, setMetalPrices] = useState(METAL_FALLBACK);
-  const [spotGold, setSpotGold] = useState(null);
-  const [spotSilver, setSpotSilver] = useState(null);
-  const [priceStatus, setPriceStatus] = useState("loading"); // loading | live | fallback
-  const [priceTime, setPriceTime] = useState(null);
-  const [image, setImage] = useState(null);
-  const [imageB64, setImageB64] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [extracted, setExtracted] = useState(null);
-  const [editGrams, setEditGrams] = useState("");
-  const [editRound, setEditRound] = useState("");
-  const [editFancy, setEditFancy] = useState("");
+  // Spot prices
+  const [metalPrices,  setMetalPrices]  = useState(METAL_FALLBACK);
+  const [spotGold,     setSpotGold]     = useState(null);
+  const [spotSilver,   setSpotSilver]   = useState(null);
+  const [priceStatus,  setPriceStatus]  = useState("loading");
+  const [priceTime,    setPriceTime]    = useState(null);
+
+  // Image / extraction
+  const [image,       setImage]       = useState(null);
+  const [imageB64,    setImageB64]    = useState(null);
+  const [imageMime,   setImageMime]   = useState("image/jpeg");
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState("");
+  const [extracted,   setExtracted]   = useState(null);
+  const [editGrams,   setEditGrams]   = useState("");
+  const [editRound,   setEditRound]   = useState("");
+  const [editFancy,   setEditFancy]   = useState("");
+
+  // Job info
   const [jobName, setJobName] = useState("");
-  const [jobNum, setJobNum] = useState("");
+  const [jobNum,  setJobNum]  = useState("");
+
+  // Pricing selections
+  const [metal,     setMetal]     = useState(null);
+  const [roundType, setRoundType] = useState("Natural · Full Cut");
+  const [roundPPC,  setRoundPPC]  = useState(225);
+  const [fancyType, setFancyType] = useState(null);
+  const [fancyPPC,  setFancyPPC]  = useState(null);
+
   const fileRef = useRef();
 
-  const [metal, setMetal] = useState(null);
-  const [roundType, setRoundType] = useState("Natural · Full Cut");
-  const [roundPPC, setRoundPPC] = useState(225);
-  const [fancyType, setFancyType] = useState(null);
-  const [fancyPPC, setFancyPPC] = useState(null);
-
-  const hasRound = parseFloat(editRound) > 0;
-  const hasFancy = parseFloat(editFancy) > 0;
+  // Derived
+  const hasRound   = parseFloat(editRound) > 0;
+  const hasFancy   = parseFloat(editFancy) > 0;
   const showConfig = extracted !== null;
-  const roundReady = !hasRound || (roundType !== null && roundPPC !== null);
-  const fancyReady = !hasFancy || (fancyType !== null && fancyPPC !== null);
-  const showSummary = showConfig && metal !== null && roundReady && fancyReady;
+  const roundReady = !hasRound || (roundType && roundPPC);
+  const fancyReady = !hasFancy || (fancyType && fancyPPC);
+  const showSummary = showConfig && metal && roundReady && fancyReady;
 
-  // Fetch live metal spot prices
+  const metalPPG  = metal ? metalPrices[metal] : 0;
+  const grams     = parseFloat(editGrams) || 0;
+  const roundCt   = parseFloat(editRound)  || 0;
+  const fancyCt   = parseFloat(editFancy)  || 0;
+  const subtotal  = grams * metalPPG + roundCt * (roundPPC||0) + fancyCt * (fancyPPC||0);
+  const rawFinal  = subtotal * (1 + MARKUP);
+  const finalPrice = rawFinal < 1500 ? Math.ceil(rawFinal/10)*10 : Math.ceil(rawFinal/50)*50;
+
+  // ── Fetch live spot prices ─────────────────────────────────────────────
   async function fetchSpotPrices() {
     setPriceStatus("loading");
     try {
-      const res = await fetch("https://metals.live/api/spot");
+      const res  = await fetch("https://metals.live/api/spot");
       const data = await res.json();
-      const gold = data.gold || data.XAU;
+      const gold   = data.gold   || data.XAU;
       const silver = data.silver || data.XAG;
-      if (!gold) throw new Error("No gold price");
-      const goldPerGram = gold / TROY_OZ_TO_GRAMS;
-      const silverPerGram = silver ? (silver / TROY_OZ_TO_GRAMS) : METAL_FALLBACK["925 Silver"];
-      setSpotGold(gold);
-      setSpotSilver(silver || null);
+      if (!gold) throw new Error("No gold");
+      const gPG = gold / TROY_OZ;
+      const sPG = silver ? silver / TROY_OZ : METAL_FALLBACK["925 Silver"] / 0.925;
+      setSpotGold(gold); setSpotSilver(silver || null);
       setMetalPrices({
-        "10K Gold":   parseFloat((goldPerGram * KARAT_PURITY["10K Gold"]).toFixed(2)),
-        "14K Gold":   parseFloat((goldPerGram * KARAT_PURITY["14K Gold"]).toFixed(2)),
-        "18K Gold":   parseFloat((goldPerGram * KARAT_PURITY["18K Gold"]).toFixed(2)),
-        "925 Silver": parseFloat((silverPerGram * KARAT_PURITY["925 Silver"]).toFixed(2)),
+        "10K Gold":   +((gPG * KARAT_PURITY["10K Gold"]).toFixed(2)),
+        "14K Gold":   +((gPG * KARAT_PURITY["14K Gold"]).toFixed(2)),
+        "18K Gold":   +((gPG * KARAT_PURITY["18K Gold"]).toFixed(2)),
+        "925 Silver": +((sPG * KARAT_PURITY["925 Silver"]).toFixed(2)),
       });
       setPriceStatus("live");
-      setPriceTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+      setPriceTime(new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}));
     } catch {
       setMetalPrices(METAL_FALLBACK);
       setPriceStatus("fallback");
-      setPriceTime(null);
     }
   }
 
-  // Fetch on mount
-  useState(() => { fetchSpotPrices(); }, []);
+  useEffect(() => { fetchSpotPrices(); }, []);
 
-  const metalPPG = metal ? metalPrices[metal] : 0;
-  const grams = parseFloat(editGrams) || 0;
-  const roundCt = parseFloat(editRound) || 0;
-  const fancyCt = parseFloat(editFancy) || 0;
-  const metalCost = grams * metalPPG;
-  const roundCost = roundCt * (roundPPC || 0);
-  const fancyCost = fancyCt * (fancyPPC || 0);
-  const subtotal = metalCost + roundCost + fancyCost;
-  const markup = subtotal * MARKUP;
-  const rawFinal = subtotal + markup;
-  const finalPrice = rawFinal < 1500 ? Math.ceil(rawFinal / 10) * 10 : Math.ceil(rawFinal / 50) * 50;
-
+  // ── Handlers ──────────────────────────────────────────────────────────
   function handleRoundType(t) { setRoundType(t); setRoundPPC(ROUND_TYPES[t][0]); }
   function handleFancyType(t) { setFancyType(t); setFancyPPC(FANCY_TYPES[t][0]); }
 
@@ -197,10 +171,16 @@ export default function CADPricingTool() {
     setMetal(null); setFancyType(null); setFancyPPC(null);
   }
 
+  function saveKey() {
+    localStorage.setItem("pw_api_key", apiKey);
+    setShowKeyInput(false);
+  }
+
   function handleFile(e) {
     const file = e.target.files[0]; if (!file) return;
     reset();
     setImage(URL.createObjectURL(file));
+    setImageMime(file.type || "image/jpeg");
     const reader = new FileReader();
     reader.onload = () => setImageB64(reader.result.split(",")[1]);
     reader.readAsDataURL(file);
@@ -208,343 +188,307 @@ export default function CADPricingTool() {
 
   async function analyze() {
     if (!imageB64) return;
+    if (!apiKey) { setShowKeyInput(true); return; }
     setLoading(true); setError(""); reset();
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "x-api-key": apiKey,
+          "anthropic-version":"2023-06-01",
+          "anthropic-dangerous-direct-browser-access":"true",
+        },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          messages: [{ role: "user", content: [
-            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageB64 } },
-            { type: "text", text: `Jewelry CAD spec sheet. Return ONLY valid JSON, no markdown:
+          model:"claude-sonnet-4-5", max_tokens:1000,
+          messages:[{ role:"user", content:[
+            { type:"image", source:{ type:"base64", media_type:imageMime, data:imageB64 } },
+            { type:"text", text:`Jewelry CAD spec sheet. Return ONLY valid JSON, no markdown:
 {"grams":<number|null>,"metal_type":"<10K Gold|14K Gold|18K Gold|925 Silver|null>","round_carats":<number|null>,"round_type":"<Moissanite|CVD Lab|Natural · Single Cut|Natural · Full Cut|null>","fancy_carats":<number|null>,"fancy_type":"<Moissanite|CVD Lab|Natural (Modified Emerald)|null>","notes":"<brief summary>"}
 - Gram weight: grams, wt, weight, gr, g
 - Metal type: 10K/14K/18K Gold or 925/Silver/Sterling
 - Round carats: RD, Round, DW, R
-- Round type: Moissanite (Moiss/MOI), CVD Lab (CVD/Lab/LG), Natural · Single Cut (SC), Natural · Full Cut (FC/Brilliant/Natural)
+- Round type: Moissanite(Moiss/MOI), CVD Lab(CVD/Lab/LG), Natural · Single Cut(SC), Natural · Full Cut(FC/Brilliant/Natural)
 - Fancy carats: Fancy, FD, Pear, Marquise, Princess, Oval, Cushion, Emerald
 - Fancy type: Moissanite, CVD Lab, Natural (Modified Emerald)
-Null if not found. Numbers only for numeric fields.` }
+Null if not found. Numbers only.` }
           ]}]
         })
       });
-      const data = await res.json();
-      const raw = data.content.filter(b => b.type === "text").map(b => b.text).join("");
-      const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      if (!res.ok) { const t = await res.text(); throw new Error(`API ${res.status}: ${t.slice(0,120)}`); }
+      const data   = await res.json();
+      const raw    = data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
+      const parsed = JSON.parse(raw.replace(/```json|```/g,"").trim());
       setExtracted(parsed);
-      setEditGrams(parsed.grams != null ? String(parsed.grams) : "");
+      setEditGrams(parsed.grams       != null ? String(parsed.grams)         : "");
       setEditRound(parsed.round_carats != null ? String(parsed.round_carats) : "");
       setEditFancy(parsed.fancy_carats != null ? String(parsed.fancy_carats) : "");
-      if (parsed.metal_type && METAL_PRICES[parsed.metal_type]) setMetal(parsed.metal_type);
-      if (parsed.round_type && ROUND_TYPES[parsed.round_type]) {
-        setRoundType(parsed.round_type);
-        setRoundPPC(ROUND_TYPES[parsed.round_type][0]);
-      }
-      if (parsed.fancy_type && FANCY_TYPES[parsed.fancy_type]) {
-        setFancyType(parsed.fancy_type);
-        setFancyPPC(FANCY_TYPES[parsed.fancy_type][0]);
-      }
-    } catch { setError("Could not read the image. Please try again."); }
+      if (parsed.metal_type && METAL_FALLBACK[parsed.metal_type]) setMetal(parsed.metal_type);
+      if (parsed.round_type && ROUND_TYPES[parsed.round_type]) { setRoundType(parsed.round_type); setRoundPPC(ROUND_TYPES[parsed.round_type][0]); }
+      if (parsed.fancy_type && FANCY_TYPES[parsed.fancy_type]) { setFancyType(parsed.fancy_type); setFancyPPC(FANCY_TYPES[parsed.fancy_type][0]); }
+    } catch(e) { setError(e.message || "Could not read image. Please try again."); }
     setLoading(false);
   }
 
-  const inputStyle = {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "13px 14px",
-    fontSize: 15,
-    fontFamily: "inherit",
-    color: C.text,
-    background: C.surface,
-    border: "none",
-    borderRadius: 12,
-    outline: "none",
-    fontWeight: 500,
+  function doExport() {
+    const lines = [
+      "PRIME WHOLESALE — CAD QUOTE",
+      "─────────────────────────────",
+      jobName && `Job: ${jobName}`,
+      jobNum  && `#${jobNum}`,
+      "",
+      `Metal:  ${metal} · ${fmtD(grams)}g`,
+      hasRound && `Round:  ${roundType} · ${fmtD(roundCt)}ct`,
+      hasFancy && `Fancy:  ${fancyType} · ${fmtD(fancyCt)}ct`,
+      "",
+      `TOTAL:  ${fmt(finalPrice)}`,
+      "",
+      "Quote valid for 7 days.",
+    ].filter(Boolean).join("\n");
+    if (navigator.share) { navigator.share({ title:"CAD Quote", text:lines }); }
+    else { navigator.clipboard.writeText(lines).then(()=>alert("Copied to clipboard!")); }
+  }
+
+  // ── Shared styles ──────────────────────────────────────────────────────
+  const inp = {
+    width:"100%", padding:"13px 14px", fontSize:15,
+    color:C.text, background:C.surface, border:"none", borderRadius:12,
+    outline:"none", fontWeight:500,
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div style={{
-      background: C.bg,
-      borderRadius: 28,
-      padding: "20px 18px 28px",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif",
-      maxWidth: 420,
-      margin: "0 auto",
-      color: C.text,
-      minHeight: 600,
-    }}>
+    <div style={{ background:C.bg, padding:"20px 18px 36px", maxWidth:480, margin:"0 auto", minHeight:"100vh" }}>
+
+      {/* API Key setup */}
+      {showKeyInput && (
+        <Card style={{ background:"#1F1813", borderColor:C.goldBorder }}>
+          <FieldLabel><span style={{color:C.gold}}>One-time setup</span></FieldLabel>
+          <p style={{ fontSize:13, color:C.textSoft, margin:"0 0 12px", lineHeight:1.55 }}>
+            Paste your Anthropic API key to enable CAD image reading. Saved on this device only.
+          </p>
+          <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)}
+            placeholder="sk-ant-api03-…" style={{...inp, marginBottom:10}} />
+          <button onClick={saveKey} disabled={!apiKey} style={{
+            width:"100%", padding:"13px", fontSize:14, fontWeight:600,
+            color:"#1A1410", background: apiKey ? C.gold : C.textMute,
+            border:"none", borderRadius:12,
+          }}>Save & continue</button>
+          <p style={{ fontSize:11.5, color:C.textMute, margin:"10px 0 0", lineHeight:1.5 }}>
+            Get a key at <strong style={{color:C.textSoft}}>console.anthropic.com</strong> → API Keys
+          </p>
+        </Card>
+      )}
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22, gap: 10 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <button
-            onClick={() => { setImage(null); setImageB64(null); reset(); if (fileRef.current) fileRef.current.value = ""; }}
-            style={{ width: 38, height: 38, borderRadius: "50%", background: C.surface, border: "none", color: C.gold, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-          >‹</button>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18, gap:10 }}>
+        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+          <button onClick={()=>{ setImage(null); setImageB64(null); reset(); if(fileRef.current)fileRef.current.value=""; }}
+            style={{ width:38, height:38, borderRadius:"50%", background:C.surface, border:"none", color:C.gold, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center" }}>‹</button>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
-              CAD<br/>Pricing
-            </h1>
-            <p style={{ fontSize: 13, color: C.textMute, margin: "4px 0 0" }}>Instant quote from CAD</p>
+            <h1 style={{ fontSize:26, fontWeight:700, margin:0, lineHeight:1.1, letterSpacing:"-0.02em" }}>CAD<br/>Pricing</h1>
+            <p style={{ fontSize:13, color:C.textMute, margin:"4px 0 0" }}>Instant quote from design</p>
           </div>
         </div>
-        {showSummary && (
-          <IconBtn primary>
-            <span style={{ fontSize: 14 }}>↑</span> Quote
-          </IconBtn>
-        )}
+        <button onClick={()=>setShowKeyInput(true)} style={{
+          width:36, height:36, borderRadius:"50%", background:C.surface,
+          border:"none", color:C.textSoft, fontSize:16,
+          display:"flex", alignItems:"center", justifyContent:"center",
+        }}>⚙</button>
       </div>
 
-      {/* Live price banner */}
+      {/* Live spot price banner */}
       <div style={{
-        background: priceStatus === "live" ? "rgba(76, 175, 130, 0.1)" : priceStatus === "fallback" ? "rgba(212, 165, 116, 0.1)" : C.surface,
-        border: `1px solid ${priceStatus === "live" ? "rgba(76,175,130,0.3)" : priceStatus === "fallback" ? C.goldBorder : C.cardBorder}`,
-        borderRadius: 14, padding: "12px 16px", marginBottom: 14,
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        background: priceStatus==="live" ? "rgba(76,175,130,0.08)" : priceStatus==="fallback" ? "rgba(212,165,116,0.08)" : C.surface,
+        border:`1px solid ${priceStatus==="live" ? "rgba(76,175,130,0.25)" : priceStatus==="fallback" ? C.goldBorder : C.cardBorder}`,
+        borderRadius:14, padding:"12px 16px", marginBottom:14,
+        display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{
-            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-            background: priceStatus === "live" ? "#4CAF82" : priceStatus === "fallback" ? C.gold : C.textMute,
-            boxShadow: priceStatus === "live" ? "0 0 6px #4CAF82" : "none",
-          }} />
+            width:8, height:8, borderRadius:"50%", flexShrink:0,
+            background: priceStatus==="live" ? C.green : priceStatus==="fallback" ? C.gold : C.textMute,
+            boxShadow: priceStatus==="live" ? `0 0 7px ${C.green}` : "none",
+          }}/>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 600, color: priceStatus === "live" ? "#4CAF82" : C.gold, margin: 0 }}>
-              {priceStatus === "loading" ? "Fetching live price…" : priceStatus === "live" ? `Live Gold · ${spotGold?.toFixed(0)}/oz` : "Using estimated prices"}
+            <p style={{ fontSize:12.5, fontWeight:600, margin:0,
+              color: priceStatus==="live" ? C.green : C.gold }}>
+              {priceStatus==="loading" ? "Fetching live gold price…"
+               : priceStatus==="live"  ? `Live Gold · $${spotGold?.toFixed(0)}/oz`
+               : "Using estimated prices — tap ↻ to retry"}
             </p>
-            {priceStatus === "live" && spotSilver && (
-              <p style={{ fontSize: 11, color: C.textMute, margin: "2px 0 0" }}>
-                Silver ${spotSilver.toFixed(2)}/oz · Updated {priceTime}
+            {priceStatus==="live" && (
+              <p style={{ fontSize:11, color:C.textMute, margin:"2px 0 0" }}>
+                {spotSilver ? `Silver $${spotSilver.toFixed(2)}/oz · ` : ""}Updated {priceTime}
               </p>
-            )}
-            {priceStatus === "fallback" && (
-              <p style={{ fontSize: 11, color: C.textMute, margin: "2px 0 0" }}>Tap refresh to retry live price</p>
             )}
           </div>
         </div>
         <button onClick={fetchSpotPrices} style={{
-          width: 32, height: 32, borderRadius: "50%", background: C.surface,
-          border: "none", color: C.textSoft, fontSize: 15, display: "flex",
-          alignItems: "center", justifyContent: "center", flexShrink: 0,
-          animation: priceStatus === "loading" ? "spin 1s linear infinite" : "none",
+          width:32, height:32, borderRadius:"50%", background:C.surface,
+          border:"none", color:C.textSoft, fontSize:16,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          animation: priceStatus==="loading" ? "spin 1s linear infinite" : "none",
         }}>↻</button>
       </div>
 
       {/* Job info */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 110px", gap: 10, marginBottom: 14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 110px", gap:10, marginBottom:14 }}>
         <div>
           <FieldLabel>Job name</FieldLabel>
-          <input value={jobName} onChange={e => setJobName(e.target.value)} placeholder="e.g. Engagement Ring" style={inputStyle} />
+          <input value={jobName} onChange={e=>setJobName(e.target.value)} placeholder="e.g. Engagement Ring" style={inp} />
         </div>
         <div>
           <FieldLabel>Job #</FieldLabel>
-          <input value={jobNum} onChange={e => setJobNum(e.target.value)} placeholder="J1042" style={inputStyle} />
+          <input value={jobNum} onChange={e=>setJobNum(e.target.value)} placeholder="J1042" style={inp} />
         </div>
       </div>
 
-      {/* Upload Card */}
+      {/* Upload */}
       <Card style={{ padding: image ? 14 : 18 }}>
         <FieldLabel>CAD Image</FieldLabel>
-        <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
-
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{display:"none"}} />
         {!image ? (
-          <div
-            onClick={() => fileRef.current.click()}
-            style={{
-              borderRadius: 14,
-              padding: "30px 16px",
-              textAlign: "center",
-              cursor: "pointer",
-              background: C.surface,
-              border: `1px dashed ${C.cardBorder}`,
-            }}
-          >
-            <div style={{ fontSize: 32, color: C.gold, marginBottom: 8 }}>◈</div>
-            <p style={{ fontSize: 14, fontWeight: 500, color: C.text, margin: "0 0 4px" }}>Tap to upload CAD image</p>
-            <p style={{ fontSize: 12, color: C.textMute, margin: 0 }}>JPG, PNG, or WEBP</p>
+          <div onClick={()=>fileRef.current.click()} style={{
+            borderRadius:14, padding:"34px 16px", textAlign:"center",
+            background:C.surface, border:`1px dashed rgba(255,255,255,0.08)`, cursor:"pointer",
+          }}>
+            <div style={{ fontSize:34, color:C.gold, marginBottom:10 }}>◈</div>
+            <p style={{ fontSize:14.5, fontWeight:500, margin:"0 0 5px" }}>Tap to upload CAD image</p>
+            <p style={{ fontSize:12, color:C.textMute, margin:0 }}>JPG, PNG, or WEBP</p>
           </div>
         ) : (
           <div>
-            <img src={image} alt="CAD" style={{ width: "100%", borderRadius: 12, maxHeight: 240, objectFit: "contain", display: "block", background: C.surface, marginBottom: 12 }} />
-            {!extracted && (
-              <button
-                onClick={analyze}
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "14px 16px",
-                  fontSize: 14.5,
-                  fontWeight: 600,
-                  color: "#1A1410",
-                  background: loading ? C.textMute : C.gold,
-                  border: "none",
-                  borderRadius: 12,
-                  cursor: loading ? "wait" : "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                {loading ? "Reading image…" : "Read CAD image"}
-              </button>
-            )}
+            <img src={image} style={{ width:"100%", borderRadius:12, maxHeight:260, objectFit:"contain", display:"block", background:C.surface, marginBottom:12 }} />
+            <div style={{ display:"flex", gap:10 }}>
+              {!extracted && (
+                <button onClick={analyze} disabled={loading} style={{
+                  flex:1, padding:"14px", fontSize:14.5, fontWeight:600,
+                  color:"#1A1410", background: loading ? C.textMute : C.gold,
+                  border:"none", borderRadius:12,
+                }}>{loading ? "Reading image…" : "Read CAD image"}</button>
+              )}
+              {extracted && (
+                <button onClick={()=>{ reset(); }} style={{
+                  flex:1, padding:"14px", fontSize:13.5, fontWeight:500,
+                  color:C.textSoft, background:C.surface2, border:"none", borderRadius:12,
+                }}>Re-read image</button>
+              )}
+              <button onClick={()=>{ setImage(null); setImageB64(null); reset(); fileRef.current.value=""; }} style={{
+                padding:"14px 18px", fontSize:13.5, color:C.textMute,
+                background:"transparent", border:`1px solid ${C.cardBorder}`, borderRadius:12,
+              }}>Change</button>
+            </div>
           </div>
         )}
-        {error && (
-          <p style={{ fontSize: 12.5, color: "#E89494", marginTop: 10, padding: "8px 12px", background: "rgba(232, 148, 148, 0.1)", borderRadius: 8, margin: "10px 0 0" }}>
-            {error}
-          </p>
-        )}
+        {error && <p style={{ fontSize:12.5, color:"#E89494", marginTop:10, padding:"9px 13px", background:"rgba(232,148,148,0.08)", borderRadius:8, margin:"10px 0 0" }}>{error}</p>}
       </Card>
 
-      {/* Step 2 — Configure */}
-      {showConfig && (
-        <>
-          {/* Specifications */}
+      {/* Step 2 — Config */}
+      {showConfig && (<>
+        {/* Extracted specs */}
+        <Card>
+          <FieldLabel>Specifications</FieldLabel>
+          {extracted?.notes && (
+            <p style={{ fontSize:12.5, color:C.textSoft, background:C.surface, padding:"9px 13px", borderRadius:10, margin:"0 0 14px", lineHeight:1.5 }}>{extracted.notes}</p>
+          )}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+            {[["Metal",editGrams,setEditGrams,"g"],["Round",editRound,setEditRound,"ct"],["Fancy",editFancy,setEditFancy,"ct"]].map(([lbl,v,setV,u])=>(
+              <div key={lbl}>
+                <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>{lbl}</p>
+                <div style={{ position:"relative" }}>
+                  <input type="number" value={v} onChange={e=>setV(e.target.value)} placeholder="0" step="0.01"
+                    style={{...inp, paddingRight:30, fontSize:14}} />
+                  <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:11, color:C.textMute }}>{u}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Metal selector */}
+        <Card>
+          <FieldLabel>Metal</FieldLabel>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            {Object.keys(metalPrices).map(k=><Pill key={k} active={metal===k} onClick={()=>setMetal(k)} full>{k}</Pill>)}
+          </div>
+        </Card>
+
+        {/* Round diamonds */}
+        {hasRound && (
           <Card>
-            <FieldLabel>Specifications</FieldLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              <div>
-                <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 6px", fontWeight: 500 }}>Metal</p>
-                <div style={{ position: "relative" }}>
-                  <input type="number" value={editGrams} onChange={e => setEditGrams(e.target.value)} placeholder="0" step="0.01" style={{ ...inputStyle, paddingRight: 26, fontSize: 14 }} />
-                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>g</span>
-                </div>
+            <FieldLabel>Round Diamonds</FieldLabel>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom: roundType && ROUND_TYPES[roundType].length>1 ? 14 : 0 }}>
+              {Object.keys(ROUND_TYPES).map(k=><Pill key={k} active={roundType===k} onClick={()=>handleRoundType(k)}>{k}</Pill>)}
+            </div>
+            {roundType && ROUND_TYPES[roundType].length>1 && (<>
+              <p style={{ fontSize:11, color:C.textMute, margin:"0 0 8px", fontWeight:500 }}>Quality grade</p>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                {ROUND_TYPES[roundType].map((p,i)=><Pill key={p} active={roundPPC===p} onClick={()=>setRoundPPC(p)} full>{QUALITY_LABELS[i]}</Pill>)}
               </div>
-              <div>
-                <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 6px", fontWeight: 500 }}>Round</p>
-                <div style={{ position: "relative" }}>
-                  <input type="number" value={editRound} onChange={e => setEditRound(e.target.value)} placeholder="0" step="0.01" style={{ ...inputStyle, paddingRight: 30, fontSize: 14 }} />
-                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>ct</span>
-                </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 6px", fontWeight: 500 }}>Fancy</p>
-                <div style={{ position: "relative" }}>
-                  <input type="number" value={editFancy} onChange={e => setEditFancy(e.target.value)} placeholder="0" step="0.01" style={{ ...inputStyle, paddingRight: 30, fontSize: 14 }} />
-                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>ct</span>
-                </div>
-              </div>
+            </>)}
+          </Card>
+        )}
+
+        {/* Fancy diamonds */}
+        {hasFancy && (
+          <Card>
+            <FieldLabel>Fancy Diamonds</FieldLabel>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {Object.keys(FANCY_TYPES).map(k=><Pill key={k} active={fancyType===k} onClick={()=>handleFancyType(k)}>{k}</Pill>)}
             </div>
           </Card>
-
-          {/* Metal */}
-          <Card>
-            <FieldLabel>Metal</FieldLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {Object.keys(METAL_PRICES).map(k => (
-                <Pill key={k} active={metal === k} onClick={() => setMetal(k)} full>{k}</Pill>
-              ))}
-            </div>
-          </Card>
-
-          {/* Round */}
-          {hasRound && (
-            <Card>
-              <FieldLabel>Round Diamonds</FieldLabel>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: roundType && ROUND_TYPES[roundType].length > 1 ? 14 : 0 }}>
-                {Object.keys(ROUND_TYPES).map(k => (
-                  <Pill key={k} active={roundType === k} onClick={() => handleRoundType(k)}>{k}</Pill>
-                ))}
-              </div>
-              {roundType && ROUND_TYPES[roundType].length > 1 && (
-                <>
-                  <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 8px", fontWeight: 500 }}>Quality grade</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {ROUND_TYPES[roundType].map((p, i) => (
-                      <Pill key={p} active={roundPPC === p} onClick={() => setRoundPPC(p)} full>
-                        {["Standard", "Premium", "Superior", "Exceptional"][i]}
-                      </Pill>
-                    ))}
-                  </div>
-                </>
-              )}
-            </Card>
-          )}
-
-          {/* Fancy */}
-          {hasFancy && (
-            <Card>
-              <FieldLabel>Fancy Diamonds</FieldLabel>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {Object.keys(FANCY_TYPES).map(k => (
-                  <Pill key={k} active={fancyType === k} onClick={() => handleFancyType(k)}>{k}</Pill>
-                ))}
-              </div>
-            </Card>
-          )}
-        </>
-      )}
+        )}
+      </>)}
 
       {/* Quote Summary */}
       {showSummary && (
-        <Card style={{ padding: 0, overflow: "hidden", marginTop: 18 }}>
-          <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: C.gold, fontSize: 14 }}>◆</span>
-            <FieldLabel><span style={{ color: C.gold }}>Quote Summary</span></FieldLabel>
+        <Card style={{ padding:0, overflow:"hidden", marginTop:6 }}>
+          <div style={{ padding:"16px 18px 10px", display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ color:C.gold, fontSize:13 }}>◆</span>
+            <FieldLabel><span style={{color:C.gold}}>Quote Summary</span></FieldLabel>
           </div>
-
-          <div style={{ padding: "0 18px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: `1px solid ${C.divider}` }}>
-              <span style={{ color: C.textSoft, fontSize: 14 }}>Metal</span>
-              <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{metal} · {fmtDecimal(grams)}g</span>
-            </div>
-            {hasRound && (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: `1px solid ${C.divider}` }}>
-                <span style={{ color: C.textSoft, fontSize: 14 }}>Round</span>
-                <span style={{ fontSize: 14, fontWeight: 500, color: C.text, textAlign: "right" }}>{roundType.replace("Natural · ", "")} · {fmtDecimal(roundCt)}ct</span>
+          <div style={{ padding:"0 18px" }}>
+            {[
+              [true,  "Metal",  `${metal} · ${fmtD(grams)}g`],
+              [hasRound,"Round",`${roundType.replace("Natural · ","")} · ${fmtD(roundCt)}ct`],
+              [hasFancy,"Fancy",`${fancyType?.replace(" (Modified Emerald)","")} · ${fmtD(fancyCt)}ct`],
+            ].filter(([show])=>show).map(([,lbl,val])=>(
+              <div key={lbl} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderTop:`1px solid ${C.divider}` }}>
+                <span style={{ color:C.textSoft, fontSize:14 }}>{lbl}</span>
+                <span style={{ fontSize:14, fontWeight:500, textAlign:"right" }}>{val}</span>
               </div>
-            )}
-            {hasFancy && (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: `1px solid ${C.divider}` }}>
-                <span style={{ color: C.textSoft, fontSize: 14 }}>Fancy</span>
-                <span style={{ fontSize: 14, fontWeight: 500, color: C.text, textAlign: "right" }}>{fancyType.replace(" (Modified Emerald)", "")} · {fmtDecimal(fancyCt)}ct</span>
-              </div>
-            )}
+            ))}
           </div>
-
-          {/* Grand Total Block */}
-          <div style={{ background: C.surface, padding: "20px 18px", marginTop: 4 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: C.gold, fontSize: 14, fontWeight: 600 }}>Grand Total</span>
-              <span style={{ color: C.gold, fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em" }}>{fmt(finalPrice)}</span>
+          <div style={{ background:C.surface, padding:"20px 18px", marginTop:4 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ color:C.gold, fontSize:14, fontWeight:600 }}>Grand Total</span>
+              <span style={{ color:C.gold, fontSize:34, fontWeight:700, letterSpacing:"-0.02em" }}>{fmt(finalPrice)}</span>
             </div>
-            {(jobName || jobNum) && (
-              <p style={{ fontSize: 11.5, color: C.textMute, margin: "4px 0 0", textAlign: "right" }}>
-                {jobName}{jobName && jobNum ? " · " : ""}{jobNum && `#${jobNum}`}
+            {(jobName||jobNum) && (
+              <p style={{ fontSize:11.5, color:C.textMute, margin:"4px 0 0", textAlign:"right" }}>
+                {jobName}{jobName&&jobNum?" · ":""}{jobNum&&`#${jobNum}`}
               </p>
             )}
           </div>
-
-          {/* Export Button */}
-          <div style={{ padding: 14, background: C.surface }}>
-            <button
-              onClick={() => alert(`Quote\n${jobName ? jobName + " " : ""}${jobNum ? "#" + jobNum : ""}\n\n${metal} · ${fmtDecimal(grams)}g${hasRound ? `\n${roundType} · ${fmtDecimal(roundCt)}ct rounds` : ""}${hasFancy ? `\n${fancyType} · ${fmtDecimal(fancyCt)}ct fancy` : ""}\n\nTotal: ${fmt(finalPrice)}`)}
-              style={{
-                width: "100%",
-                padding: "15px 20px",
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#1A1410",
-                background: C.gold,
-                border: "none",
-                borderRadius: 14,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <span style={{ fontSize: 16 }}>↑</span> Export Quote
-            </button>
+          <div style={{ padding:14, background:C.surface }}>
+            <button onClick={doExport} style={{
+              width:"100%", padding:"15px", fontSize:15, fontWeight:600,
+              color:"#1A1410", background:C.gold, border:"none", borderRadius:14,
+              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+            }}><span style={{fontSize:16}}>↑</span> Export Quote</button>
           </div>
         </Card>
       )}
 
-      <p style={{ fontSize: 11, color: C.textMute, textAlign: "center", margin: "20px 0 0", letterSpacing: "0.05em" }}>
-        Prime Wholesale · Quote valid for 7 days
+      <p style={{ fontSize:11, color:C.textMute, textAlign:"center", margin:"24px 0 0", letterSpacing:"0.06em" }}>
+        PRIME WHOLESALE · Quote valid for 7 days
       </p>
     </div>
   );
 }
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
