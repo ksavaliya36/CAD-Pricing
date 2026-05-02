@@ -195,7 +195,7 @@ function App() {
   function getSuggestedPerGram(item) {
     const spot = item.type === "silver" ? spotSilver : spotGold;
     if (!spot) return null;
-    const adjusted = (spot + PREMIUM_PER_OZ) * (1 + METAL_LOSS);
+    const adjusted = (spot + (item.type === "silver" ? 0 : PREMIUM_PER_OZ)) * (1 + METAL_LOSS);
     const metalPerGram = (adjusted / TROY_OZ) * item.purity;
     const labor = item.type === "silver" ? LABOR_SILVER : LABOR_GOLD;
     return metalPerGram + labor;
