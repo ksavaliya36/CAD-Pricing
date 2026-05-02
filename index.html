@@ -431,9 +431,9 @@ Null if not found. Numbers only for numeric fields.` }
 
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
                   <input type="number" inputMode="decimal" value={exGrams} onChange={e=>setExGrams(e.target.value)}
-                    placeholder="Grams" step="0.01" style={{...inp, fontSize:13, padding:"10px 12px"}} />
+                    placeholder="Grams" step="0.01" style={{...inp, background:C.surface2, fontSize:13, padding:"10px 12px"}} />
                   <select value={exMetal} onChange={e=>setExMetal(e.target.value)}
-                    style={{...inp, fontSize:13, padding:"10px 12px"}}>
+                    style={{...inp, background:C.surface2, fontSize:13, padding:"10px 12px"}}>
                     <option value="">Metal type</option>
                     <option value="10K Gold">10K Gold</option>
                     <option value="14K Gold">14K Gold</option>
@@ -441,16 +441,16 @@ Null if not found. Numbers only for numeric fields.` }
                     <option value="925 Silver">925 Silver</option>
                   </select>
                   <input type="number" inputMode="decimal" value={exRound} onChange={e=>setExRound(e.target.value)}
-                    placeholder="Round ct" step="0.01" style={{...inp, fontSize:13, padding:"10px 12px"}} />
+                    placeholder="Round ct" step="0.01" style={{...inp, background:C.surface2, fontSize:13, padding:"10px 12px"}} />
                   <select value={exRoundType} onChange={e=>setExRoundType(e.target.value)}
-                    style={{...inp, fontSize:13, padding:"10px 12px"}}>
+                    style={{...inp, background:C.surface2, fontSize:13, padding:"10px 12px"}}>
                     <option value="">Round type</option>
                     {Object.keys(ROUND_TYPES).map(k => <option key={k} value={k}>{k}</option>)}
                   </select>
                   <input type="number" inputMode="decimal" value={exFancy} onChange={e=>setExFancy(e.target.value)}
-                    placeholder="Fancy ct" step="0.01" style={{...inp, fontSize:13, padding:"10px 12px"}} />
+                    placeholder="Fancy ct" step="0.01" style={{...inp, background:C.surface2, fontSize:13, padding:"10px 12px"}} />
                   <select value={exFancyType} onChange={e=>setExFancyType(e.target.value)}
-                    style={{...inp, fontSize:13, padding:"10px 12px"}}>
+                    style={{...inp, background:C.surface2, fontSize:13, padding:"10px 12px"}}>
                     <option value="">Fancy type</option>
                     {Object.keys(FANCY_TYPES).map(k => <option key={k} value={k}>{k}</option>)}
                   </select>
