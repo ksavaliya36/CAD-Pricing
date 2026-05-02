@@ -143,7 +143,12 @@ function App() {
   const fancyReady  = !hasFancy || (fancyType && fancyPPC);
   const showSummary = showConfig && metal && roundReady && fancyReady;
 
-  const metalPPG   = metal ? metalPrices[metal] : 0;
+  function getMetalRate(name) {
+    const item = SUGGESTED_LIST.find(s => s.name === name);
+    const suggested = item ? getSuggestedPerGram(item) : null;
+    return suggested ?? metalPrices[name] ?? 0;
+  }
+  const metalPPG = metal ? getMetalRate(metal) : 0;
   const grams      = parseFloat(editGrams) || 0;
   const roundCt    = parseFloat(editRound)  || 0;
   const fancyCt    = parseFloat(editFancy)  || 0;
@@ -471,7 +476,7 @@ Null if not found. Numbers only for numeric fields.` }
         <Card>
           <FieldLabel>Metal</FieldLabel>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-            {Object.keys(metalPrices).map(k=><Pill key={k} active={metal===k} onClick={()=>setMetal(k)} full>{k}</Pill>)}
+            {Object.keys(metalPrices).map(k=><Pill key={k} active={metal===k} onClick={()=>setMetal(k)} full>{k} · ${getMetalRate(k).toFixed(2)}/g</Pill>)}
           </div>
         </Card>
 
