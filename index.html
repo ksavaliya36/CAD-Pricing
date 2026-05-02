@@ -116,9 +116,7 @@ function App() {
   const [editRound,   setEditRound]   = useState("");
   const [editFancy,   setEditFancy]   = useState("");
 
-  // Job info
-  const [jobName, setJobName] = useState("");
-  const [jobNum,  setJobNum]  = useState("");
+  // Selections
   const [showSuggested, setShowSuggested] = useState(false);
 
   // Pricing selections
@@ -264,8 +262,6 @@ Null if not found. Numbers only.` }
     const lines = [
       "PRIME WHOLESALE — CAD QUOTE",
       "─────────────────────────────",
-      jobName && `Job: ${jobName}`,
-      jobNum  && `#${jobNum}`,
       "",
       `Metal:  ${metal} · ${fmtD(grams)}g`,
       hasRound && `Round:  ${roundType} · ${fmtD(roundCt)}ct`,
@@ -374,7 +370,7 @@ Null if not found. Numbers only.` }
             justifyContent: "space-between", color: C.textSoft, fontSize: 13, fontWeight: 500,
           }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: C.gold }}>◆</span> Suggested customer prices
+              <span style={{ color: C.gold }}>◆</span> Suggested Metal Prices
             </span>
             <span style={{ fontSize: 12, color: C.textMute, transition: "transform 0.2s",
               transform: showSuggested ? "rotate(90deg)" : "rotate(0)" }}>▸</span>
@@ -402,18 +398,6 @@ Null if not found. Numbers only.` }
           )}
         </div>
       )}
-
-      {/* Job info */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 110px", gap:10, marginBottom:14 }}>
-        <div>
-          <FieldLabel>Job name</FieldLabel>
-          <input value={jobName} onChange={e=>setJobName(e.target.value)} placeholder="e.g. Engagement Ring" style={inp} />
-        </div>
-        <div>
-          <FieldLabel>Job #</FieldLabel>
-          <input value={jobNum} onChange={e=>setJobNum(e.target.value)} placeholder="J1042" style={inp} />
-        </div>
-      </div>
 
       {/* Upload */}
       <Card style={{ padding: image ? 14 : 18 }}>
@@ -536,11 +520,6 @@ Null if not found. Numbers only.` }
               <span style={{ color:C.gold, fontSize:14, fontWeight:600 }}>Grand Total</span>
               <span style={{ color:C.gold, fontSize:34, fontWeight:700, letterSpacing:"-0.02em" }}>{fmt(finalPrice)}</span>
             </div>
-            {(jobName||jobNum) && (
-              <p style={{ fontSize:11.5, color:C.textMute, margin:"4px 0 0", textAlign:"right" }}>
-                {jobName}{jobName&&jobNum?" · ":""}{jobNum&&`#${jobNum}`}
-              </p>
-            )}
           </div>
           <div style={{ padding:14, background:C.surface }}>
             <button onClick={doExport} style={{
