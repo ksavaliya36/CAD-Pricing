@@ -465,7 +465,7 @@ Null if not found. Numbers only for numeric fields.` }
               <div key={lbl}>
                 <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>{lbl}</p>
                 <div style={{ position:"relative" }}>
-                  <input type="number" value={v} onChange={e=>setV(e.target.value)} placeholder="0" step="0.01"
+                  <input type="number" inputMode="decimal" value={v} onChange={e=>setV(e.target.value)} placeholder="0" step="0.01"
                     style={{...inp, paddingRight:30, fontSize:14}} />
                   <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:11, color:C.textMute }}>{u}</span>
                 </div>
@@ -483,7 +483,7 @@ Null if not found. Numbers only for numeric fields.` }
             <div style={{ borderTop:`1px solid ${C.divider}`, paddingTop:10 }}>
               <p style={{ fontSize:11, color:C.textMute, margin:"0 0 6px", fontWeight:500 }}>Rate ($/g)</p>
               <div style={{ position:"relative" }}>
-                <input type="number" value={customMetalRate} onChange={e=>setCustomMetalRate(e.target.value)}
+                <input type="number" inputMode="decimal" value={customMetalRate} onChange={e=>setCustomMetalRate(e.target.value)}
                   step="0.01" style={{...inp, paddingRight:30, fontSize:14}} />
                 <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:11, color:C.textMute }}>/g</span>
               </div>
