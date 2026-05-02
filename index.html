@@ -477,7 +477,7 @@ Null if not found. Numbers only for numeric fields.` }
         <Card>
           <FieldLabel>Metal</FieldLabel>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom: metal ? 12 : 0 }}>
-            {Object.keys(metalPrices).map(k=><Pill key={k} active={metal===k} onClick={()=>{ setMetal(k); setCustomMetalRate(getMetalRate(k).toFixed(2)); }} full>{k} · ${getMetalRate(k).toFixed(2)}/g</Pill>)}
+            {Object.keys(metalPrices).map(k=><Pill key={k} active={metal===k} onClick={()=>{ setMetal(k); setCustomMetalRate(String(METAL_FALLBACK[k])); }} full>{k} · ${METAL_FALLBACK[k]}/g</Pill>)}
           </div>
           {metal && (
             <div style={{ borderTop:`1px solid ${C.divider}`, paddingTop:10 }}>
