@@ -133,15 +133,19 @@ function App() {
   const rawFinal  = subtotal * (1 + MARKUP);
   const finalPrice = rawFinal < 1500 ? Math.ceil(rawFinal/10)*10 : Math.ceil(rawFinal/50)*50;
 
-  // ── Fetch live spot prices ─────────────────────────────────────────────
+  // ── Fetch live spot prices (gold-api.com — free, CORS, no key) ─────────
   async function fetchSpotPrices() {
     setPriceStatus("loading");
     try {
-      const res  = await fetch("https://metals.live/api/spot");
-      const data = await res.json();
-      const gold   = data.gold   || data.XAU;
-      const silver = data.silver || data.XAG;
-      if (!gold) throw new Error("No gold");
+      const [goldRes, silverRes] = await Promise.all([
+        fetch("https://api.gold-api.com/price/XAU"),
+        fetch("https://api.gold-api.com/price/XAG"),
+      ]);
+      const goldData   = await goldRes.json();
+      const silverData = await silverRes.json();
+      const gold   = goldData.price;
+      const silver = silverData.price;
+      if (!gold) throw new Error("No gold price returned");
       const gPG = gold / TROY_OZ;
       const sPG = silver ? silver / TROY_OZ : METAL_FALLBACK["925 Silver"] / 0.925;
       setSpotGold(gold); setSpotSilver(silver || null);
