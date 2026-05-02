@@ -34,6 +34,16 @@ const { useState, useRef, useEffect } = React;
 // ── Constants ──────────────────────────────────────────────────────────────
 const METAL_FALLBACK = { "10K Gold": 83, "14K Gold": 110, "18K Gold": 140, "925 Silver": 10 };
 const KARAT_PURITY   = { "10K Gold": 10/24, "14K Gold": 14/24, "18K Gold": 18/24, "925 Silver": 0.925 };
+const SUGGESTED_LIST = [
+  { name: "10K Gold",   purity: 10/24,    type: "gold" },
+  { name: "14K Gold",   purity: 14/24,    type: "gold" },
+  { name: "18K Gold",   purity: 18/24,    type: "gold" },
+  { name: "22K Gold",   purity: 22/24,    type: "gold" },
+  { name: "24K Gold",   purity: 1.0,      type: "gold" },
+  { name: "925 Silver", purity: 0.925,    type: "silver" },
+];
+const PREMIUM_PER_OZ = 150;
+const METAL_LOSS     = 0.05;
 const TROY_OZ        = 31.1035;
 const ROUND_TYPES    = { "Moissanite": [10], "CVD Lab": [90], "Natural · Single Cut": [105,155], "Natural · Full Cut": [225,275,325,400] };
 const FANCY_TYPES    = { "Moissanite": [15], "CVD Lab": [140], "Natural (Modified Emerald)": [450] };
@@ -107,6 +117,7 @@ function App() {
   // Job info
   const [jobName, setJobName] = useState("");
   const [jobNum,  setJobNum]  = useState("");
+  const [showSuggested, setShowSuggested] = useState(false);
 
   // Pricing selections
   const [metal,     setMetal]     = useState(null);
@@ -160,10 +171,21 @@ function App() {
     } catch {
       setMetalPrices(METAL_FALLBACK);
       setPriceStatus("fallback");
+      // Approximate fallback spot prices so the suggested dropdown still works
+      setSpotGold(4500);
+      setSpotSilver(32);
     }
   }
 
   useEffect(() => { fetchSpotPrices(); }, []);
+
+  // Suggested customer price = (spot + $150) × 1.05 × purity ÷ troy oz
+  function getSuggestedPerGram(item) {
+    const spot = item.type === "silver" ? spotSilver : spotGold;
+    if (!spot) return null;
+    const adjusted = (spot + PREMIUM_PER_OZ) * (1 + METAL_LOSS);
+    return (adjusted / TROY_OZ) * item.purity;
+  }
 
   // ── Handlers ──────────────────────────────────────────────────────────
   function handleRoundType(t) { setRoundType(t); setRoundPPC(ROUND_TYPES[t][0]); }
@@ -335,6 +357,47 @@ Null if not found. Numbers only.` }
           animation: priceStatus==="loading" ? "spin 1s linear infinite" : "none",
         }}>↻</button>
       </div>
+
+      {/* Suggested prices dropdown — shows whenever we have spot data */}
+      {(spotGold || spotSilver) && (
+        <div style={{
+          background: C.card, border: `1px solid ${C.cardBorder}`,
+          borderRadius: 14, marginBottom: 14, overflow: "hidden",
+        }}>
+          <button onClick={() => setShowSuggested(!showSuggested)} style={{
+            width: "100%", padding: "13px 16px", background: "transparent",
+            border: "none", display: "flex", alignItems: "center",
+            justifyContent: "space-between", color: C.textSoft, fontSize: 13, fontWeight: 500,
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: C.gold }}>◆</span> Suggested customer prices
+            </span>
+            <span style={{ fontSize: 12, color: C.textMute, transition: "transform 0.2s",
+              transform: showSuggested ? "rotate(90deg)" : "rotate(0)" }}>▸</span>
+          </button>
+          {showSuggested && (
+            <div className="fade-in" style={{ padding: "0 16px 14px" }}>
+              <p style={{ fontSize: 11, color: C.textMute, margin: "0 0 10px", lineHeight: 1.5 }}>
+                Spot + ${PREMIUM_PER_OZ}/oz premium + {(METAL_LOSS*100).toFixed(0)}% metal loss
+              </p>
+              {SUGGESTED_LIST.map(item => {
+                const p = getSuggestedPerGram(item);
+                if (!p) return null;
+                return (
+                  <div key={item.name} style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", padding: "9px 0",
+                    borderTop: `1px solid ${C.divider}`,
+                  }}>
+                    <span style={{ fontSize: 13, color: C.textSoft }}>{item.name}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C.gold }}>${p.toFixed(2)}<span style={{ fontSize: 11, color: C.textMute, fontWeight: 400 }}>/g</span></span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Job info */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 110px", gap:10, marginBottom:14 }}>
