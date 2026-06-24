@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="CAD Pricing" />
 <meta name="theme-color" content="#0B0F14" />
 <title>CAD Pricing — Prime Wholesale</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"></script>
 <style>
   @keyframes spin    { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -29,7 +29,7 @@
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
+<script type="text/babel" data-presets="react">
 const { useState, useRef, useEffect } = React;
 
 // ── Constants ──────────────────────────────────────────────────────────────
